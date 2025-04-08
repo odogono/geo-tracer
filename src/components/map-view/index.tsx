@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 import { Layer, Map, Source } from 'react-map-gl/maplibre';
 
@@ -8,6 +8,8 @@ import { useTheme } from '@contexts/theme/context';
 import { useWorld } from '@contexts/world/use-world';
 import { lineString, length as turf_length } from '@turf/turf';
 import { EdgeFeature, RouteFeatureProperties } from '@types';
+
+const SNAP_DISTANCE_PX = 50;
 
 export const MapView = () => {
   const { theme } = useTheme();
@@ -20,6 +22,11 @@ export const MapView = () => {
     setCurrentRoadPoints,
     setRoadCollection
   } = useWorld();
+
+  const [mousePosition, setMousePosition] = useState<GeoJSON.Position | null>(
+    null
+  );
+  const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null);
 
   const mapStyle =
     theme === 'dark'
@@ -36,7 +43,7 @@ export const MapView = () => {
       const newPoint: GeoJSON.Position = [lngLat.lng, lngLat.lat];
 
       // If this is the first point, just add it
-      if (currentRoadPoints.length === 0) {
+      if (!currentRoadPoints || currentRoadPoints.length === 0) {
         setCurrentRoadPoints([newPoint]);
         return;
       }
@@ -105,16 +112,104 @@ export const MapView = () => {
       // Cancel the current line by clearing points and current edge
       setCurrentRoadPoints([]);
       setCurrentEdge(null);
+      setMousePosition(null);
     },
     [drawMode, setCurrentRoadPoints, setCurrentEdge]
   );
 
-  const cursor = drawMode === 'none' ? 'grab' : 'crosshair';
+  const findNearestPoint = useCallback(
+    (cursorPos: GeoJSON.Position): GeoJSON.Position | null => {
+      if (!mapInstance) {
+        return null;
+      }
+
+      // Convert cursor position to screen coordinates
+      const cursorScreen = mapInstance.project([cursorPos[0], cursorPos[1]]);
+
+      // Check each point in the road collection
+      for (const feature of roadCollection.features) {
+        const coordinates = feature.geometry.coordinates;
+        if (coordinates.length < 2) {
+          continue;
+        }
+
+        // Check both start and end points of the LineString
+        const startPoint = coordinates[0];
+        const endPoint = coordinates.at(-1);
+
+        if (!startPoint || !endPoint) {
+          continue;
+        }
+
+        // Check start point
+        const startScreen = mapInstance.project([startPoint[0], startPoint[1]]);
+        const startDx = cursorScreen.x - startScreen.x;
+        const startDy = cursorScreen.y - startScreen.y;
+        const startDistancePx = Math.sqrt(
+          startDx * startDx + startDy * startDy
+        );
+
+        if (startDistancePx <= SNAP_DISTANCE_PX) {
+          return startPoint;
+        }
+
+        // Check end point
+        const endScreen = mapInstance.project([endPoint[0], endPoint[1]]);
+        const endDx = cursorScreen.x - endScreen.x;
+        const endDy = cursorScreen.y - endScreen.y;
+        const endDistancePx = Math.sqrt(endDx * endDx + endDy * endDy);
+
+        if (endDistancePx <= SNAP_DISTANCE_PX) {
+          return endPoint;
+        }
+      }
+
+      return null;
+    },
+    [mapInstance, roadCollection]
+  );
+
+  const handleMouseMove = useCallback(
+    (e: maplibregl.MapMouseEvent) => {
+      if (
+        drawMode !== 'road' ||
+        !currentRoadPoints ||
+        currentRoadPoints.length === 0
+      ) {
+        return;
+      }
+
+      const { lngLat } = e;
+      const cursorPos: GeoJSON.Position = [lngLat.lng, lngLat.lat];
+
+      // Try to find a point to snap to
+      const snapPoint = findNearestPoint(cursorPos);
+      setMousePosition(snapPoint || cursorPos);
+    },
+    [drawMode, currentRoadPoints, findNearestPoint]
+  );
+
+  const previewLine =
+    currentRoadPoints && currentRoadPoints.length > 0 && mousePosition
+      ? {
+          geometry: {
+            coordinates: [
+              currentRoadPoints.at(-1) as GeoJSON.Position,
+              mousePosition
+            ],
+            type: 'LineString' as const
+          },
+          properties: {
+            type: 'preview'
+          },
+          type: 'Feature' as const
+        }
+      : null;
 
   return (
     <div className="w-screen h-screen">
       <Map
-        cursor={cursor}
+        cursor={drawMode === 'none' ? 'grab' : 'crosshair'}
         initialViewState={{
           latitude: 0,
           longitude: 0,
@@ -123,8 +218,9 @@ export const MapView = () => {
         mapStyle={mapStyle}
         onClick={handleMapClick}
         onContextMenu={handleMapRightClick}
+        onLoad={e => setMapInstance(e.target)}
+        onMouseMove={handleMouseMove}
         style={{
-          cursor: 'crosshair',
           height: '100%',
           width: '100%'
         }}
@@ -139,6 +235,19 @@ export const MapView = () => {
             type="line"
           />
         </Source>
+        {previewLine && (
+          <Source data={previewLine} type="geojson">
+            <Layer
+              id="preview"
+              paint={{
+                'line-color': theme === 'dark' ? '#ffffff' : '#000000',
+                'line-dasharray': [2, 2],
+                'line-width': 2
+              }}
+              type="line"
+            />
+          </Source>
+        )}
       </Map>
     </div>
   );
