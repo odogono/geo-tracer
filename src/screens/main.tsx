@@ -1,22 +1,22 @@
+import { IconView } from '@components/icon-view';
+import { MapView } from '@components/map-view';
 import { ThemeTogglePortal } from '@components/theme/toggle-portal';
+import { WorldProvider } from '@contexts/world/provider';
 import { createLog } from '@helpers/log';
 
 const log = createLog('Main');
 
 const Main = () => {
-  const message = 'ODGN Vite/React Starter';
+  const message = 'Geo Path Tracer';
 
   log.info(message);
 
   return (
-    <>
-      <div className="w-screen h-screen bg-background">
-        <div className="flex items-center justify-center gap-4 w-full h-full ">
-          <h1 className="text-text text-4xl ">{message}</h1>
-        </div>
-      </div>
+    <WorldProvider>
+      <MapView />
+      <IconView />
       <ThemeTogglePortal />
-    </>
+    </WorldProvider>
   );
 };
 
