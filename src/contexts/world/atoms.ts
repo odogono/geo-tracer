@@ -1,6 +1,7 @@
+import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 
-import { DrawMode, RouteCollection } from '@types';
+import { DrawMode, EdgeFeature, RouteCollection } from '@types';
 
 export const drawModeAtom = atomWithStorage<DrawMode>(
   'geo-path-tracer:drawMode',
@@ -22,3 +23,9 @@ export const roadCollectionAtom = atomWithStorage<RouteCollection>(
     type: 'FeatureCollection'
   }
 );
+
+// Current road being drawn
+export const currentRoadPointsAtom = atom<GeoJSON.Position[] | null>(null);
+
+// Current edge being drawn
+export const currentEdgeAtom = atom<EdgeFeature | null>(null);
