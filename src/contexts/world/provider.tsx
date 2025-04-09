@@ -1,25 +1,30 @@
+import { ReactNode, useState } from 'react';
+
 import { useAtom } from 'jotai';
 
-import { RouteCollection } from '@types';
+import { DrawMode, EdgeFeature, RouteCollection } from '@types';
 
 import {
   currentEdgeAtom,
   currentRoadPointsAtom,
-  drawModeAtom,
   roadCollectionAtom
 } from './atoms';
 import { WorldContext } from './context';
 
-export const WorldProvider: React.FC<{ children: React.ReactNode }> = ({
-  children
-}) => {
-  const [drawMode, setDrawMode] = useAtom(drawModeAtom);
+type Props = {
+  children: ReactNode;
+};
+
+export const WorldProvider = ({ children }: Props) => {
+  const [drawMode, setDrawMode] = useState<DrawMode>('none');
   const [currentRoadPoints, setCurrentRoadPoints] = useAtom(
     currentRoadPointsAtom
   );
   const [currentEdge, setCurrentEdge] = useAtom(currentEdgeAtom);
   const [roadCollection, setRoadCollection] =
     useAtom<RouteCollection>(roadCollectionAtom);
+  const [highlightedFeature, setHighlightedFeature] =
+    useState<EdgeFeature | null>(null);
 
   return (
     <WorldContext.Provider
@@ -27,10 +32,12 @@ export const WorldProvider: React.FC<{ children: React.ReactNode }> = ({
         currentEdge,
         currentRoadPoints,
         drawMode,
+        highlightedFeature,
         roadCollection,
         setCurrentEdge,
         setCurrentRoadPoints,
         setDrawMode,
+        setHighlightedFeature,
         setRoadCollection
       }}
     >

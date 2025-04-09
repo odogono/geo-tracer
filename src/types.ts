@@ -4,7 +4,6 @@ export type EdgeFeatureProperties = {
   hash: string;
   length: number;
   name?: string | null;
-  osmid: number;
   type: 'edge';
 };
 
