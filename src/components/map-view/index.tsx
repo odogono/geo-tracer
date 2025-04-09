@@ -58,6 +58,9 @@ export const MapView = () => {
     try {
       // Calculate the bounding box of the FeatureCollection
       const bounds = bbox(featureCollection);
+      if (bounds[0] === Infinity) {
+        return;
+      }
 
       // Fit the map to the bounds with some padding
       mapInstance.fitBounds(

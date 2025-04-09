@@ -26,3 +26,9 @@ export type RouteCollection = GeoJSON.FeatureCollection<
 export type FeatureCollections = {
   featureCollections: FeatureCollection[];
 };
+
+export type FeatureCollectionWithProps = FeatureCollection & {
+  properties: {
+    name: string;
+  };
+};

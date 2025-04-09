@@ -2,7 +2,7 @@ import { FeatureCollection } from 'geojson';
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 
-import { DrawMode, EdgeFeature } from '@types';
+import { DrawMode, EdgeFeature, FeatureCollectionWithProps } from '@types';
 
 import { createLog } from '../../helpers/log';
 
@@ -13,23 +13,37 @@ export const drawModeAtom = atomWithStorage<DrawMode>(
   'none'
 );
 
-export const featureCollectionsAtom = atomWithStorage<FeatureCollection[]>(
-  'geo-path-tracer:featureCollections',
-  [
-    {
-      features: [],
-      type: 'FeatureCollection'
-    }
-  ]
-);
+const defaultFeatureCollections: FeatureCollectionWithProps[] = [
+  {
+    features: [],
+    properties: {
+      name: 'Route'
+    },
+    type: 'FeatureCollection'
+  },
+  {
+    features: [],
+    properties: {
+      name: 'Roads'
+    },
+    type: 'FeatureCollection'
+  },
+  {
+    features: [],
+    properties: {
+      name: 'Computed'
+    },
+    type: 'FeatureCollection'
+  }
+];
 
-// export const roadCollectionAtom = atomWithStorage<RouteCollection>(
-//   'geo-path-tracer:roadCollection',
-//   {
-//     features: [],
-//     type: 'FeatureCollection'
-//   }
-// );
+export const featureCollectionsAtom = atomWithStorage<
+  FeatureCollectionWithProps[]
+>('geo-path-tracer:featureCollections', defaultFeatureCollections);
+
+export const resetFeatureCollectionsAtom = atom(null, (get, set) => {
+  set(featureCollectionsAtom, defaultFeatureCollections);
+});
 
 export const selectedFeatureCollectionIndexAtom = atom<number>(0);
 
@@ -38,6 +52,10 @@ export const setSelectedFeatureCollectionIndexAtom = atom(
   (get, set, index: number) => {
     const featureCollections = get(featureCollectionsAtom);
     index = Math.max(0, Math.min(index, featureCollections.length - 1));
+    log.debug('setSelectedFeatureCollectionIndexAtom', {
+      featureCollections,
+      index
+    });
     set(selectedFeatureCollectionIndexAtom, index);
   }
 );

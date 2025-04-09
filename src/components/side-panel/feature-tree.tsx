@@ -9,6 +9,8 @@ import { useWorld } from '@contexts/world/use-world';
 import { createLog } from '@helpers/log';
 import { cn } from '@helpers/tailwind';
 
+import { FeatureCollectionWithProps } from '../../types';
+
 const log = createLog('featureTree');
 
 // Define the node types for our tree
@@ -16,6 +18,7 @@ type TreeNode = {
   children?: TreeNode[];
   data: FeatureCollection | Feature;
   id: string;
+  index: number;
   name: string;
   type: 'collection' | 'feature';
 };
@@ -31,8 +34,10 @@ const TreeNodeComponent = ({ dragHandle, node, style }: NodeProps) => {
   const {
     featureCollections,
     highlightedFeature,
+    selectedFeatureCollectionIndex,
     setFeatureCollections,
-    setHighlightedFeature
+    setHighlightedFeature,
+    setSelectedFeatureCollectionIndex
   } = useWorld();
   const [isHovered, setIsHovered] = useState(false);
 
@@ -41,7 +46,10 @@ const TreeNodeComponent = ({ dragHandle, node, style }: NodeProps) => {
   const isFeatureCollection = node.data.type === 'collection';
   const isFeature = node.data.type === 'feature';
 
-  log.debug('data', data);
+  const isSelected =
+    isFeatureCollection && selectedFeatureCollectionIndex === node.data.index;
+
+  // log.debug('data', data);
   const isHighlighted =
     node.data.type === 'feature' &&
     highlightedFeature &&
@@ -53,6 +61,11 @@ const TreeNodeComponent = ({ dragHandle, node, style }: NodeProps) => {
   } else if (isFeature) {
     icon = <Box />;
   }
+
+  const label =
+    (node.data.data as FeatureCollectionWithProps).properties?.name ||
+    node.data.name;
+  // log.debug('node data', node.data);
 
   const handleDelete = useCallback(
     (e: React.MouseEvent) => {
@@ -102,11 +115,14 @@ const TreeNodeComponent = ({ dragHandle, node, style }: NodeProps) => {
     <div
       className={cn(
         'flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-500 group',
-        isHighlighted && 'bg-blue-100 dark:bg-blue-900'
+        isHighlighted && 'bg-blue-100 dark:bg-blue-900',
+        isSelected && 'bg-green-100 dark:bg-green-900'
       )}
       onClick={() => {
         if (node.data.type === 'feature') {
           setHighlightedFeature(node.data.data as Feature);
+        } else if (node.data.type === 'collection') {
+          setSelectedFeatureCollectionIndex(node.data.index);
         }
       }}
       onMouseEnter={() => setIsHovered(true)}
@@ -115,7 +131,7 @@ const TreeNodeComponent = ({ dragHandle, node, style }: NodeProps) => {
       style={style}
     >
       <span className="text-sm">{icon}</span>
-      <span className="text-sm flex-grow">{node.data.name}</span>
+      <span className="text-sm flex-grow">{label}</span>
       {isFeature && isHovered && (
         <button
           className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
@@ -141,11 +157,13 @@ export const FeatureTree = () => {
           children: collection.features.map((feature, featureIndex) => ({
             data: feature,
             id: `feature-${index}-${featureIndex}`,
+            index: featureIndex,
             name: `Feature ${featureIndex + 1} (${feature.geometry.type})`,
             type: 'feature'
           })),
           data: collection,
           id: `collection-${index}`,
+          index,
           name: `Collection ${index + 1}`,
           type: 'collection'
         };

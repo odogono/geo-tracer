@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { Plus, Radiation } from 'lucide-react';
 import type { editor } from 'monaco-editor';
 
 import { useTheme } from '@contexts/theme/context';
@@ -150,10 +151,14 @@ export const SidePanel = () => {
 
       {isExpanded && (
         <div className="p-4 h-full flex flex-col">
-          <h2 className="text-lg font-semibold mb-4 dark:text-white">
-            GeoJSON Source
-          </h2>
-
+          <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4 gap-4 pb-4">
+            <button>
+              <Plus />
+            </button>
+            <button aria-label="Reset">
+              <Radiation />
+            </button>
+          </div>
           {/* Tab Navigation */}
           <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4">
             <button
