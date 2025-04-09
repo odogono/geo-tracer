@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import { Pen, Route } from 'lucide-react';
+import { Route, SquareDashed } from 'lucide-react';
 
 import { useTheme } from '@contexts/theme/context';
 import { useWorld } from '@contexts/world/use-world';
@@ -25,7 +25,7 @@ export const IconView = () => {
   return (
     <div className="absolute top-0 left-0">
       <button
-        aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+        aria-label={`Select Mode`}
         className={cn(
           'fixed top-4 left-4 p-2 rounded-full',
           'bg-gray-500 dark:bg-opacity-20 dark:backdrop-blur-sm',
@@ -38,10 +38,10 @@ export const IconView = () => {
         )}
         onClick={() => handleSetDrawMode('route')}
       >
-        <Pen />
+        <SquareDashed />
       </button>
       <button
-        aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+        aria-label={`Draw Route`}
         className={cn(
           'fixed top-24 left-4 p-2 rounded-full',
           'bg-gray-500 dark:bg-opacity-20 dark:backdrop-blur-sm',

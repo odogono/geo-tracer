@@ -1,4 +1,4 @@
-export type DrawMode = 'road' | 'route' | 'none';
+export type DrawMode = 'road' | 'route' | 'select' | 'none';
 
 export type EdgeFeatureProperties = {
   hash: string;
