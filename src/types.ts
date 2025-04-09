@@ -1,3 +1,5 @@
+import { FeatureCollection } from 'geojson';
+
 export type DrawMode = 'road' | 'route' | 'select' | 'none';
 
 export type EdgeFeatureProperties = {
@@ -20,3 +22,7 @@ export type RouteCollection = GeoJSON.FeatureCollection<
   GeoJSON.LineString,
   RouteFeatureProperties
 >;
+
+export type FeatureCollections = {
+  featureCollections: FeatureCollection[];
+};

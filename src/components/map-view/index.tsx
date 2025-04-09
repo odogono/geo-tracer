@@ -4,7 +4,7 @@ import { Layer, Map as LibreMap, Source } from 'react-map-gl/maplibre';
 
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-import { Feature } from 'geojson';
+import { Feature, FeatureCollection } from 'geojson';
 
 import { useTheme } from '@contexts/theme/context';
 import { useWorld } from '@contexts/world/use-world';
@@ -25,16 +25,18 @@ const log = createLog('MapView');
 export const MapView = () => {
   const { theme } = useTheme();
   const {
-    currentEdge,
-    currentRoadPoints,
     drawMode,
+    featureCollection,
     highlightedFeature,
-    roadCollection,
-    setCurrentEdge,
-    setCurrentRoadPoints,
-    setHighlightedFeature,
-    setRoadCollection
+
+    setFeatureCollection,
+    setHighlightedFeature
   } = useWorld();
+
+  // const [currentEdge, setCurrentEdge] = useState<EdgeFeature | null>(null);
+  const [currentRoadPoints, setCurrentRoadPoints] = useState<
+    GeoJSON.Position[] | null
+  >(null);
 
   const [mousePosition, setMousePosition] = useState<GeoJSON.Position | null>(
     null
@@ -49,13 +51,13 @@ export const MapView = () => {
 
   // Function to fit the map to the bounds of the FeatureCollection
   const fitMapToFeatureCollection = useCallback(() => {
-    if (!mapInstance || roadCollection.features.length === 0) {
+    if (!mapInstance || !featureCollection) {
       return;
     }
 
     try {
       // Calculate the bounding box of the FeatureCollection
-      const bounds = bbox(roadCollection);
+      const bounds = bbox(featureCollection);
 
       // Fit the map to the bounds with some padding
       mapInstance.fitBounds(
@@ -71,7 +73,7 @@ export const MapView = () => {
     } catch (error) {
       log.error('Error fitting map to bounds:', error);
     }
-  }, [mapInstance, roadCollection]);
+  }, [mapInstance, featureCollection]);
 
   // Fit map to bounds when roadCollection changes
   useEffect(() => {
@@ -82,14 +84,18 @@ export const MapView = () => {
 
   // Fit map to bounds when map instance is loaded
   useEffect(() => {
-    if (mapInstance && roadCollection.features.length > 0) {
+    if (
+      mapInstance &&
+      featureCollection &&
+      featureCollection.features.length > 0
+    ) {
       fitMapToFeatureCollection();
     }
-  }, [mapInstance, fitMapToFeatureCollection, roadCollection]);
+  }, [mapInstance, fitMapToFeatureCollection, featureCollection]);
 
   const findNearestPoint = useCallback(
     (cursorPos: GeoJSON.Position): GeoJSON.Position | null => {
-      if (!mapInstance) {
+      if (!mapInstance || !featureCollection) {
         return null;
       }
 
@@ -97,7 +103,7 @@ export const MapView = () => {
       const cursorScreen = mapInstance.project([cursorPos[0], cursorPos[1]]);
 
       // Check each point in the road collection
-      for (const feature of roadCollection.features) {
+      for (const feature of featureCollection.features) {
         const geometryType = getFeatureGeometryType(feature);
         if (geometryType !== 'LineString') {
           continue;
@@ -142,7 +148,7 @@ export const MapView = () => {
 
       return null;
     },
-    [mapInstance, roadCollection]
+    [mapInstance, featureCollection]
   );
 
   const handleMapClick = useCallback(
@@ -188,8 +194,10 @@ export const MapView = () => {
       // Add the new point to our points array
       setCurrentRoadPoints([...currentRoadPoints, newPoint]);
 
+      log.debug('[handleMapClick] currentRoadPoints', currentRoadPoints);
+
       // Update the current edge
-      setCurrentEdge(newEdge);
+      // setCurrentEdge(newEdge);
 
       // Add the edge to our collection as a route feature
       const routeFeature: GeoJSON.Feature<
@@ -203,18 +211,24 @@ export const MapView = () => {
         type: 'Feature'
       };
 
-      setRoadCollection({
-        features: [...roadCollection.features, routeFeature],
+      const existingFeatures = featureCollection?.features || [];
+      const newFeatureCollection: FeatureCollection = {
+        ...featureCollection,
+        features: [...existingFeatures, routeFeature],
         type: 'FeatureCollection'
-      });
+      };
+
+      setFeatureCollection(newFeatureCollection);
+
+      log.debug('[handleMapClick] newFeatureCollection', newFeatureCollection);
     },
     [
       drawMode,
       currentRoadPoints,
-      roadCollection,
+      featureCollection,
       setCurrentRoadPoints,
-      setCurrentEdge,
-      setRoadCollection,
+
+      setFeatureCollection,
       findNearestPoint
     ]
   );
@@ -227,10 +241,10 @@ export const MapView = () => {
 
       // Cancel the current line by clearing points and current edge
       setCurrentRoadPoints([]);
-      setCurrentEdge(null);
+      // setCurrentEdge(null);
       setMousePosition(null);
     },
-    [drawMode, setCurrentRoadPoints, setCurrentEdge]
+    [drawMode, setCurrentRoadPoints]
   );
 
   const handleMouseMove = useCallback(
@@ -314,13 +328,15 @@ export const MapView = () => {
       : null;
 
   // Separate LineString and Point features
-  const lineFeatures = roadCollection.features.filter(
-    feature => getFeatureGeometryType(feature) === 'LineString'
-  );
+  const lineFeatures =
+    featureCollection?.features.filter(
+      feature => getFeatureGeometryType(feature) === 'LineString'
+    ) || [];
 
-  const pointFeatures = roadCollection.features.filter(
-    feature => getFeatureGeometryType(feature) === 'Point'
-  );
+  const pointFeatures =
+    featureCollection?.features.filter(
+      feature => getFeatureGeometryType(feature) === 'Point'
+    ) || [];
 
   // Create separate feature collections for lines and points
   const lineFeatureCollection: GeoJSON.FeatureCollection = {

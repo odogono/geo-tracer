@@ -14,7 +14,7 @@ import { findFeatureAtTextPosition } from './helpers';
 const log = createLog('SidePanel');
 
 export const SidePanel = () => {
-  const { roadCollection, setHighlightedFeature, setRoadCollection } =
+  const { featureCollection, setFeatureCollection, setHighlightedFeature } =
     useWorld();
   const { theme } = useTheme();
   const [isExpanded, setIsExpanded] = useState(true);
@@ -25,8 +25,8 @@ export const SidePanel = () => {
 
   // Update local JSON when roadCollection changes from outside
   useEffect(() => {
-    setLocalJson(JSON.stringify(roadCollection, null, 2));
-  }, [roadCollection]);
+    setLocalJson(JSON.stringify(featureCollection, null, 2));
+  }, [featureCollection]);
 
   const findFeatureAtCursor = useCallback(
     (position: { column: number; lineNumber: number }) => {
@@ -70,13 +70,16 @@ export const SidePanel = () => {
         ) {
           throw new Error('Invalid GeoJSON FeatureCollection');
         }
-        setRoadCollection(newCollection);
+        setFeatureCollection({
+          ...newCollection,
+          properties: { updatedAt: new Date().toISOString() }
+        });
         setJsonError(null);
       } catch (error) {
         setJsonError(error instanceof Error ? error.message : 'Invalid JSON');
       }
     },
-    [setRoadCollection]
+    [setFeatureCollection]
   );
 
   const handleEditorChange = useCallback(

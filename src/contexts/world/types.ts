@@ -1,14 +1,16 @@
-import { DrawMode, EdgeFeature, RouteCollection } from '@types';
+import { Feature, FeatureCollection } from 'geojson';
+
+import { DrawMode } from '@types';
 
 export type WorldContextType = {
-  currentEdge: EdgeFeature | null;
-  // Road drawing state
-  currentRoadPoints: GeoJSON.Position[];
-
   drawMode: DrawMode;
-  roadCollection: RouteCollection;
-  setCurrentEdge: (edge: EdgeFeature | null) => void;
-  setCurrentRoadPoints: (points: GeoJSON.Position[]) => void;
-  setDrawMode: (drawMode: DrawMode) => void;
-  setRoadCollection: (collection: RouteCollection) => void;
+  featureCollection: FeatureCollection | null;
+  featureCollections: FeatureCollection[];
+  highlightedFeature: Feature | null;
+  selectedFeatureCollectionIndex: number;
+  setDrawMode: (mode: DrawMode) => void;
+  setFeatureCollection: (featureCollection: FeatureCollection) => void;
+  setFeatureCollections: (collections: FeatureCollection[]) => void;
+  setHighlightedFeature: (feature: Feature | null) => void;
+  setSelectedFeatureCollectionIndex: (index: number) => void;
 };

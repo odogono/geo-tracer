@@ -1,14 +1,16 @@
 import { ReactNode, useState } from 'react';
 
 import { Feature } from 'geojson';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 
-import { DrawMode, RouteCollection } from '@types';
+import { DrawMode } from '@types';
 
 import {
-  currentEdgeAtom,
-  currentRoadPointsAtom,
-  roadCollectionAtom
+  featureCollectionAtom,
+  featureCollectionsAtom,
+  selectedFeatureCollectionIndexAtom,
+  setFeatureCollectionAtom,
+  setSelectedFeatureCollectionIndexAtom
 } from './atoms';
 import { WorldContext } from './context';
 
@@ -18,29 +20,41 @@ type Props = {
 
 export const WorldProvider = ({ children }: Props) => {
   const [drawMode, setDrawMode] = useState<DrawMode>('none');
-  const [currentRoadPoints, setCurrentRoadPoints] = useAtom(
-    currentRoadPointsAtom
-  );
-  const [currentEdge, setCurrentEdge] = useAtom(currentEdgeAtom);
-  const [roadCollection, setRoadCollection] =
-    useAtom<RouteCollection>(roadCollectionAtom);
+  // const [currentRoadPoints, setCurrentRoadPoints] = useAtom(
+  //   currentRoadPointsAtom
+  // );
+  // const [currentEdge, setCurrentEdge] = useAtom(currentEdgeAtom);
   const [highlightedFeature, setHighlightedFeature] = useState<Feature | null>(
     null
+  );
+
+  const [featureCollections, setFeatureCollections] = useAtom(
+    featureCollectionsAtom
+  );
+
+  const featureCollection = useAtomValue(featureCollectionAtom);
+  const setFeatureCollection = useSetAtom(setFeatureCollectionAtom);
+
+  const selectedFeatureCollectionIndex = useAtomValue(
+    selectedFeatureCollectionIndexAtom
+  );
+  const setSelectedFeatureCollectionIndex = useSetAtom(
+    setSelectedFeatureCollectionIndexAtom
   );
 
   return (
     <WorldContext.Provider
       value={{
-        currentEdge,
-        currentRoadPoints,
         drawMode,
+        featureCollection,
+        featureCollections,
         highlightedFeature,
-        roadCollection,
-        setCurrentEdge,
-        setCurrentRoadPoints,
+        selectedFeatureCollectionIndex,
         setDrawMode,
+        setFeatureCollection,
+        setFeatureCollections,
         setHighlightedFeature,
-        setRoadCollection
+        setSelectedFeatureCollectionIndex
       }}
     >
       {children}

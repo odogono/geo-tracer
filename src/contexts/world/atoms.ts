@@ -1,26 +1,85 @@
+import { FeatureCollection } from 'geojson';
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 
-import { DrawMode, EdgeFeature, RouteCollection } from '@types';
+import { DrawMode, EdgeFeature } from '@types';
+
+import { createLog } from '../../helpers/log';
+
+const log = createLog('world/atoms');
 
 export const drawModeAtom = atomWithStorage<DrawMode>(
   'geo-path-tracer:drawMode',
   'none'
 );
 
-export const routeCollectionAtom = atomWithStorage<RouteCollection>(
-  'geo-path-tracer:routeCollection',
-  {
-    features: [],
-    type: 'FeatureCollection'
+export const featureCollectionsAtom = atomWithStorage<FeatureCollection[]>(
+  'geo-path-tracer:featureCollections',
+  [
+    {
+      features: [],
+      type: 'FeatureCollection'
+    }
+  ]
+);
+
+// export const roadCollectionAtom = atomWithStorage<RouteCollection>(
+//   'geo-path-tracer:roadCollection',
+//   {
+//     features: [],
+//     type: 'FeatureCollection'
+//   }
+// );
+
+export const selectedFeatureCollectionIndexAtom = atom<number>(0);
+
+export const setSelectedFeatureCollectionIndexAtom = atom(
+  null,
+  (get, set, index: number) => {
+    const featureCollections = get(featureCollectionsAtom);
+    index = Math.max(0, Math.min(index, featureCollections.length - 1));
+    set(selectedFeatureCollectionIndexAtom, index);
   }
 );
 
-export const roadCollectionAtom = atomWithStorage<RouteCollection>(
-  'geo-path-tracer:roadCollection',
-  {
-    features: [],
-    type: 'FeatureCollection'
+export const selectedFeatureCollectionAtom = atom<FeatureCollection | null>(
+  get => {
+    const index = get(selectedFeatureCollectionIndexAtom);
+    const featureCollections = get(featureCollectionsAtom);
+    return featureCollections[index] || null;
+  }
+);
+
+export const featureCollectionAtom = atom<FeatureCollection | null>(get => {
+  const index = get(selectedFeatureCollectionIndexAtom);
+  const featureCollections = get(featureCollectionsAtom);
+  return featureCollections[index] || null;
+});
+
+/**
+ * Set the currently selected feature collection
+ */
+export const setFeatureCollectionAtom = atom(
+  null,
+  (get, set, featureCollection: FeatureCollection) => {
+    const featureCollections = get(featureCollectionsAtom);
+    // log.debug(
+    //   '[setFeatureCollectionAtom] featureCollections',
+    //   featureCollections
+    // );
+    const index = get(selectedFeatureCollectionIndexAtom);
+    // log.debug(
+    //   '[setFeatureCollectionAtom] setting featureCollection',
+    //   featureCollection
+    // );
+    // log.debug('[setFeatureCollectionAtom] index', index);
+
+    // featureCollections[index] = featureCollection;
+    set(featureCollectionsAtom, [
+      ...featureCollections.slice(0, index),
+      featureCollection,
+      ...featureCollections.slice(index + 1)
+    ]);
   }
 );
 
