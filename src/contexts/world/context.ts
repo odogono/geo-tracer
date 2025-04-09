@@ -1,13 +1,15 @@
 import { createContext, useContext } from 'react';
 
-import { DrawMode, EdgeFeature } from '@types';
+import { Feature } from 'geojson';
+
+import { DrawMode } from '@types';
 
 export type WorldContextType = {
   drawMode: DrawMode;
-  highlightedFeature: EdgeFeature | null;
+  highlightedFeature: Feature | null;
   roadCollection: GeoJSON.FeatureCollection;
   setDrawMode: (mode: DrawMode) => void;
-  setHighlightedFeature: (feature: EdgeFeature | null) => void;
+  setHighlightedFeature: (feature: Feature | null) => void;
   setRoadCollection: (collection: GeoJSON.FeatureCollection) => void;
 };
 

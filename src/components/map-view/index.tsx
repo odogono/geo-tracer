@@ -4,11 +4,20 @@ import { Layer, Map as LibreMap, Source } from 'react-map-gl/maplibre';
 
 import 'maplibre-gl/dist/maplibre-gl.css';
 
+import { Feature } from 'geojson';
+
 import { useTheme } from '@contexts/theme/context';
 import { useWorld } from '@contexts/world/use-world';
 import { createLog } from '@helpers/log';
 import { bbox, lineString, length as turf_length } from '@turf/turf';
 import { EdgeFeature, RouteFeatureProperties } from '@types';
+
+import {
+  getFeatureGeometryType,
+  getLineStringCoordinates,
+  isLineStringFeature,
+  isPointFeature
+} from '../../helpers/geo';
 
 const SNAP_DISTANCE_PX = 50;
 const log = createLog('MapView');
@@ -23,6 +32,7 @@ export const MapView = () => {
     roadCollection,
     setCurrentEdge,
     setCurrentRoadPoints,
+    setHighlightedFeature,
     setRoadCollection
   } = useWorld();
 
@@ -30,6 +40,7 @@ export const MapView = () => {
     null
   );
   const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null);
+  const [hoveredFeature, setHoveredFeature] = useState<Feature | null>(null);
 
   const mapStyle =
     theme === 'dark'
@@ -87,8 +98,13 @@ export const MapView = () => {
 
       // Check each point in the road collection
       for (const feature of roadCollection.features) {
-        const coordinates = feature.geometry.coordinates;
-        if (coordinates.length < 2) {
+        const geometryType = getFeatureGeometryType(feature);
+        if (geometryType !== 'LineString') {
+          continue;
+        }
+
+        const coordinates = getLineStringCoordinates(feature);
+        if (!coordinates || coordinates.length < 2) {
           continue;
         }
 
@@ -101,6 +117,7 @@ export const MapView = () => {
         }
 
         // Check start point
+        // log.debug('startPoint', coordinates, feature.geometry.type);
         const startScreen = mapInstance.project([startPoint[0], startPoint[1]]);
         const startDx = cursorScreen.x - startScreen.x;
         const startDy = cursorScreen.y - startScreen.y;
@@ -236,6 +253,49 @@ export const MapView = () => {
     [drawMode, currentRoadPoints, findNearestPoint]
   );
 
+  // Function to handle feature hover
+  const handleFeatureHover = useCallback(
+    (e: maplibregl.MapMouseEvent) => {
+      if (!mapInstance || drawMode !== 'none') {
+        return;
+      }
+
+      const { lngLat } = e;
+      const cursorPos: GeoJSON.Position = [lngLat.lng, lngLat.lat];
+
+      // Check if we're hovering over any feature
+      const features = mapInstance.queryRenderedFeatures(e.point, {
+        layers: ['roads', 'points']
+      });
+
+      if (features.length > 0) {
+        // We're hovering over a feature
+        const feature = features[0];
+
+        log.debug('feature hover', feature);
+
+        // Convert the feature to an EdgeFeature
+        // const edgeFeature: EdgeFeature = {
+        //   geometry: feature.geometry as GeoJSON.LineString,
+        //   properties: {
+        //     hash: feature.properties?.hash || '',
+        //     length: feature.properties?.length || 0,
+        //     type: 'edge'
+        //   },
+        //   type: 'Feature'
+        // };
+
+        setHoveredFeature(feature);
+        setHighlightedFeature(feature);
+      } else {
+        // Not hovering over any feature
+        setHoveredFeature(null);
+        setHighlightedFeature(null);
+      }
+    },
+    [mapInstance, drawMode, setHighlightedFeature]
+  );
+
   const previewLine =
     currentRoadPoints && currentRoadPoints.length > 0 && mousePosition
       ? {
@@ -252,6 +312,26 @@ export const MapView = () => {
           type: 'Feature' as const
         }
       : null;
+
+  // Separate LineString and Point features
+  const lineFeatures = roadCollection.features.filter(
+    feature => getFeatureGeometryType(feature) === 'LineString'
+  );
+
+  const pointFeatures = roadCollection.features.filter(
+    feature => getFeatureGeometryType(feature) === 'Point'
+  );
+
+  // Create separate feature collections for lines and points
+  const lineFeatureCollection: GeoJSON.FeatureCollection = {
+    features: lineFeatures,
+    type: 'FeatureCollection'
+  };
+
+  const pointFeatureCollection: GeoJSON.FeatureCollection = {
+    features: pointFeatures,
+    type: 'FeatureCollection'
+  };
 
   useEffect(() => {
     if (!mapInstance) {
@@ -272,19 +352,33 @@ export const MapView = () => {
       type: 'geojson'
     });
 
-    mapInstance.addLayer({
-      id: 'highlighted-feature',
-      layout: {
-        'line-cap': 'round',
-        'line-join': 'round'
-      },
-      paint: {
-        'line-color': '#00ff00',
-        'line-width': 5
-      },
-      source: 'highlighted-feature',
-      type: 'line'
-    });
+    if (isLineStringFeature(highlightedFeature)) {
+      mapInstance.addLayer({
+        id: 'highlighted-feature',
+        layout: {
+          'line-cap': 'round',
+          'line-join': 'round'
+        },
+        paint: {
+          'line-color': '#00ff00',
+          'line-width': 5
+        },
+        source: 'highlighted-feature',
+        type: 'line'
+      });
+    } else if (isPointFeature(highlightedFeature)) {
+      mapInstance.addLayer({
+        id: 'highlighted-feature',
+        paint: {
+          'circle-color': theme === 'dark' ? '#ffffff' : '#000000',
+          'circle-radius': 6,
+          'circle-stroke-color': '#0F0',
+          'circle-stroke-width': 2
+        },
+        source: 'highlighted-feature',
+        type: 'circle'
+      });
+    }
 
     return () => {
       if (mapInstance.getLayer('highlighted-feature')) {
@@ -294,7 +388,7 @@ export const MapView = () => {
         mapInstance.removeSource('highlighted-feature');
       }
     };
-  }, [mapInstance, highlightedFeature]);
+  }, [mapInstance, highlightedFeature, theme]);
 
   // Update the highlighted feature source when it changes
   useEffect(() => {
@@ -318,10 +412,14 @@ export const MapView = () => {
     );
   }, [mapInstance, highlightedFeature]);
 
+  // Determine cursor style based on hover state
+  const cursorStyle =
+    drawMode === 'none' ? (hoveredFeature ? 'pointer' : 'grab') : 'crosshair';
+
   return (
     <div className="w-screen h-screen">
       <LibreMap
-        cursor={drawMode === 'none' ? 'grab' : 'crosshair'}
+        cursor={cursorStyle}
         initialViewState={{
           latitude: 0,
           longitude: 0,
@@ -331,13 +429,14 @@ export const MapView = () => {
         onClick={handleMapClick}
         onContextMenu={handleMapRightClick}
         onLoad={e => setMapInstance(e.target)}
-        onMouseMove={handleMouseMove}
+        onMouseMove={drawMode === 'road' ? handleMouseMove : handleFeatureHover}
         style={{
           height: '100%',
           width: '100%'
         }}
       >
-        <Source data={roadCollection} type="geojson">
+        {/* Render LineString features */}
+        <Source data={lineFeatureCollection} type="geojson">
           <Layer
             id="roads"
             paint={{
@@ -347,12 +446,27 @@ export const MapView = () => {
             type="line"
           />
         </Source>
+
+        {/* Render Point features as markers */}
+        <Source data={pointFeatureCollection} type="geojson">
+          <Layer
+            id="points"
+            paint={{
+              'circle-color': theme === 'dark' ? '#ffffff' : '#000000',
+              'circle-radius': 6,
+              'circle-stroke-color': theme === 'dark' ? '#000000' : '#ffffff',
+              'circle-stroke-width': 2
+            }}
+            type="circle"
+          />
+        </Source>
+
         {previewLine && (
           <Source data={previewLine} type="geojson">
             <Layer
               id="preview"
               paint={{
-                'line-color': theme === 'dark' ? '#ffffff' : '#000000',
+                'line-color': theme === 'dark' ? '#666' : '#000000',
                 'line-dasharray': [2, 2],
                 'line-width': 2
               }}

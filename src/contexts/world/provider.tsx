@@ -1,8 +1,9 @@
 import { ReactNode, useState } from 'react';
 
+import { Feature } from 'geojson';
 import { useAtom } from 'jotai';
 
-import { DrawMode, EdgeFeature, RouteCollection } from '@types';
+import { DrawMode, RouteCollection } from '@types';
 
 import {
   currentEdgeAtom,
@@ -23,8 +24,9 @@ export const WorldProvider = ({ children }: Props) => {
   const [currentEdge, setCurrentEdge] = useAtom(currentEdgeAtom);
   const [roadCollection, setRoadCollection] =
     useAtom<RouteCollection>(roadCollectionAtom);
-  const [highlightedFeature, setHighlightedFeature] =
-    useState<EdgeFeature | null>(null);
+  const [highlightedFeature, setHighlightedFeature] = useState<Feature | null>(
+    null
+  );
 
   return (
     <WorldContext.Provider
