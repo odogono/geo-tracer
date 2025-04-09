@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import { Route, SquareDashed } from 'lucide-react';
+import { PenLine, Route, SquareDashed } from 'lucide-react';
 
 import { useTheme } from '@contexts/theme/context';
 import { useWorld } from '@contexts/world/use-world';
@@ -32,18 +32,34 @@ export const IconView = () => {
           'hover:bg-gray-700 dark:hover:bg-opacity-30',
           'transition-colors',
           {
+            'bg-orange-500 dark:bg-opacity-30': drawMode === 'select',
+            'hover:bg-opacity-30': drawMode === 'select'
+          }
+        )}
+        onClick={() => handleSetDrawMode('select')}
+      >
+        <SquareDashed />
+      </button>
+      <button
+        aria-label={`Select Route`}
+        className={cn(
+          'fixed top-18 left-4 p-2 rounded-full',
+          'bg-gray-500 dark:bg-opacity-20 dark:backdrop-blur-sm',
+          'hover:bg-gray-700 dark:hover:bg-opacity-30',
+          'transition-colors',
+          {
             'bg-orange-500 dark:bg-opacity-30': drawMode === 'route',
             'hover:bg-opacity-30': drawMode === 'route'
           }
         )}
         onClick={() => handleSetDrawMode('route')}
       >
-        <SquareDashed />
+        <PenLine />
       </button>
       <button
-        aria-label={`Draw Route`}
+        aria-label={`Draw Roads`}
         className={cn(
-          'fixed top-24 left-4 p-2 rounded-full',
+          'fixed top-32 left-4 p-2 rounded-full',
           'bg-gray-500 dark:bg-opacity-20 dark:backdrop-blur-sm',
           'hover:bg-gray-700 dark:hover:bg-opacity-30',
           'transition-colors',

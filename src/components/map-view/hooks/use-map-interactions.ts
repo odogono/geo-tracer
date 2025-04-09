@@ -1,0 +1,350 @@
+import { useCallback, useState } from 'react';
+
+import { Feature, FeatureCollection } from 'geojson';
+
+import { useWorld } from '@contexts/world/use-world';
+import { getFeatureGeometryType, getLineStringCoordinates } from '@helpers/geo';
+import { createLog } from '@helpers/log';
+import { bbox, lineString, length as turf_length } from '@turf/turf';
+import { EdgeFeature, RouteFeatureProperties } from '@types';
+
+const SNAP_DISTANCE_PX = 50;
+const log = createLog('useMapInteractions');
+
+export const useMapInteractions = (mapInstance: maplibregl.Map | null) => {
+  const {
+    drawMode,
+    featureCollections,
+    highlightedFeature,
+    selectedFeatureCollectionIndex,
+    setFeatureCollections,
+    setHighlightedFeature,
+    setSelectedFeatureCollectionIndex
+  } = useWorld();
+
+  const [currentRoadPoints, setCurrentRoadPoints] = useState<
+    GeoJSON.Position[] | null
+  >(null);
+  const [mousePosition, setMousePosition] = useState<GeoJSON.Position | null>(
+    null
+  );
+  const [hoveredFeature, setHoveredFeature] = useState<Feature | null>(null);
+  const [layerIds, setLayerIds] = useState<string[]>([]);
+
+  // Function to fit the map to the bounds of all FeatureCollections
+  const fitMapToFeatureCollections = useCallback(() => {
+    if (!mapInstance || featureCollections.length === 0) {
+      return;
+    }
+
+    try {
+      // Create a combined feature collection for bounds calculation
+      const combinedCollection: FeatureCollection = {
+        features: featureCollections.flatMap(collection => collection.features),
+        type: 'FeatureCollection'
+      };
+
+      // Calculate the bounding box of the combined FeatureCollection
+      const bounds = bbox(combinedCollection);
+      if (bounds[0] === Infinity) {
+        return;
+      }
+
+      // Fit the map to the bounds with some padding
+      mapInstance.fitBounds(
+        [
+          [bounds[0], bounds[1]], // Southwest corner
+          [bounds[2], bounds[3]] // Northeast corner
+        ],
+        {
+          duration: 1000,
+          padding: 250
+        }
+      );
+    } catch (error) {
+      log.error('Error fitting map to bounds:', error);
+    }
+  }, [mapInstance, featureCollections]);
+
+  const findNearestPoint = useCallback(
+    (cursorPos: GeoJSON.Position): GeoJSON.Position | null => {
+      if (!mapInstance || featureCollections.length === 0) {
+        return null;
+      }
+
+      // Convert cursor position to screen coordinates
+      const cursorScreen = mapInstance.project([cursorPos[0], cursorPos[1]]);
+
+      // Check each point in all collections
+      for (const collection of featureCollections) {
+        for (const feature of collection.features) {
+          const geometryType = getFeatureGeometryType(feature);
+          if (geometryType !== 'LineString') {
+            continue;
+          }
+
+          const coordinates = getLineStringCoordinates(feature);
+          if (!coordinates || coordinates.length < 2) {
+            continue;
+          }
+
+          // Check both start and end points of the LineString
+          const startPoint = coordinates[0];
+          const endPoint = coordinates.at(-1);
+
+          if (!startPoint || !endPoint) {
+            continue;
+          }
+
+          // Check start point
+          const startScreen = mapInstance.project([
+            startPoint[0],
+            startPoint[1]
+          ]);
+          const startDx = cursorScreen.x - startScreen.x;
+          const startDy = cursorScreen.y - startScreen.y;
+          const startDistancePx = Math.sqrt(
+            startDx * startDx + startDy * startDy
+          );
+
+          if (startDistancePx <= SNAP_DISTANCE_PX) {
+            return startPoint;
+          }
+
+          // Check end point
+          const endScreen = mapInstance.project([endPoint[0], endPoint[1]]);
+          const endDx = cursorScreen.x - endScreen.x;
+          const endDy = cursorScreen.y - endScreen.y;
+          const endDistancePx = Math.sqrt(endDx * endDx + endDy * endDy);
+
+          if (endDistancePx <= SNAP_DISTANCE_PX) {
+            return endPoint;
+          }
+        }
+      }
+
+      return null;
+    },
+    [mapInstance, featureCollections]
+  );
+
+  const handleMapClick = useCallback(
+    (e: maplibregl.MapMouseEvent) => {
+      if (drawMode === 'road') {
+        const { lngLat } = e;
+        // Use the snap point if available, otherwise use the mouse location
+        const cursorPos: GeoJSON.Position = [lngLat.lng, lngLat.lat];
+        const snapPoint = findNearestPoint(cursorPos);
+        const newPoint = snapPoint || cursorPos;
+
+        // If this is the first point, just add it
+        if (!currentRoadPoints || currentRoadPoints.length === 0) {
+          setCurrentRoadPoints([newPoint]);
+          return;
+        }
+
+        // Create a new edge from the last point to the new point
+        const lastPoint = currentRoadPoints.at(-1);
+        if (!lastPoint) {
+          return;
+        }
+
+        const line = lineString([lastPoint, newPoint]);
+        const length = turf_length(line, { units: 'kilometers' });
+
+        const newEdge: EdgeFeature = {
+          geometry: {
+            coordinates: [lastPoint, newPoint],
+            type: 'LineString'
+          },
+          properties: {
+            hash: `${lastPoint.join(',')}-${newPoint.join(',')}`,
+            length,
+            type: 'edge'
+          },
+          type: 'Feature'
+        };
+
+        // Add the new point to our points array
+        setCurrentRoadPoints([...currentRoadPoints, newPoint]);
+
+        log.debug('[handleMapClick] currentRoadPoints', currentRoadPoints);
+
+        // Add the edge to the currently selected collection
+        const currentCollection =
+          featureCollections[selectedFeatureCollectionIndex];
+        if (!currentCollection) {
+          return;
+        }
+
+        // Create a new route feature
+        const routeFeature: GeoJSON.Feature<
+          GeoJSON.LineString,
+          RouteFeatureProperties
+        > = {
+          geometry: newEdge.geometry,
+          properties: {
+            type: 'route'
+          },
+          type: 'Feature'
+        };
+
+        // Update the selected collection with the new feature
+        const updatedCollection = {
+          ...currentCollection,
+          features: [...currentCollection.features, routeFeature]
+        };
+
+        // Update the feature collections array
+        const newFeatureCollections = [...featureCollections];
+        newFeatureCollections[selectedFeatureCollectionIndex] =
+          updatedCollection;
+        setFeatureCollections(newFeatureCollections);
+
+        log.debug(
+          '[handleMapClick] newFeatureCollections',
+          newFeatureCollections
+        );
+      } else if (drawMode === 'none') {
+        // Handle feature selection when not in road drawing mode
+        if (!mapInstance || layerIds.length === 0) {
+          return;
+        }
+
+        const features = mapInstance.queryRenderedFeatures(e.point, {
+          layers: layerIds
+        });
+
+        if (features && features.length > 0) {
+          const feature = features[0];
+          log.debug('Selected feature:', feature);
+          setHighlightedFeature(feature);
+
+          // Find which collection contains this feature and select it
+          const collectionIndex = featureCollections.findIndex(collection =>
+            collection.features.includes(feature)
+          );
+
+          if (collectionIndex !== -1) {
+            log.debug('Setting selected collection index to:', collectionIndex);
+            setSelectedFeatureCollectionIndex(collectionIndex);
+          }
+        } else {
+          // If clicking on empty space, clear the highlight
+          setHighlightedFeature(null);
+        }
+      }
+    },
+    [
+      drawMode,
+      currentRoadPoints,
+      featureCollections,
+      selectedFeatureCollectionIndex,
+      setCurrentRoadPoints,
+      setFeatureCollections,
+      findNearestPoint,
+      mapInstance,
+      setHighlightedFeature,
+      setSelectedFeatureCollectionIndex,
+      layerIds
+    ]
+  );
+
+  const handleMapRightClick = useCallback(
+    (e: maplibregl.MapMouseEvent) => {
+      if (drawMode !== 'road') {
+        return;
+      }
+
+      // Cancel the current line by clearing points and current edge
+      setCurrentRoadPoints([]);
+      setMousePosition(null);
+    },
+    [drawMode, setCurrentRoadPoints]
+  );
+
+  const handleMouseMove = useCallback(
+    (e: maplibregl.MapMouseEvent) => {
+      if (
+        drawMode !== 'road' ||
+        !currentRoadPoints ||
+        currentRoadPoints.length === 0
+      ) {
+        return;
+      }
+
+      const { lngLat } = e;
+      const cursorPos: GeoJSON.Position = [lngLat.lng, lngLat.lat];
+
+      // Try to find a point to snap to
+      const snapPoint = findNearestPoint(cursorPos);
+      setMousePosition(snapPoint || cursorPos);
+    },
+    [drawMode, currentRoadPoints, findNearestPoint]
+  );
+
+  // Function to handle feature hover
+  const handleFeatureHover = useCallback(
+    (e: maplibregl.MapMouseEvent) => {
+      if (!mapInstance || drawMode !== 'none' || layerIds.length === 0) {
+        return;
+      }
+
+      // Check if we're hovering over any feature
+      const features = mapInstance.queryRenderedFeatures(e.point, {
+        layers: layerIds
+      });
+
+      if (features.length > 0) {
+        // We're hovering over a feature
+        const feature = features[0];
+        log.debug('Hovering over feature:', feature);
+        setHoveredFeature(feature);
+      } else {
+        // Not hovering over any feature
+        setHoveredFeature(null);
+      }
+    },
+    [mapInstance, drawMode, layerIds]
+  );
+
+  // Update layer IDs when feature collections change
+  const updateLayerIds = useCallback(() => {
+    if (!mapInstance) {
+      return;
+    }
+
+    // Get all existing layer IDs
+    const existingLayerIds = featureCollections.map(
+      (_, index) => `roads-${index}`
+    );
+
+    // Add highlighted feature layers if they exist
+    if (mapInstance.getLayer('highlighted-feature-line')) {
+      existingLayerIds.push('highlighted-feature-line');
+    }
+    if (mapInstance.getLayer('highlighted-feature-point')) {
+      existingLayerIds.push('highlighted-feature-point');
+    }
+
+    // Add preview layer if it exists
+    if (mapInstance.getLayer('preview')) {
+      existingLayerIds.push('preview');
+    }
+
+    setLayerIds(existingLayerIds);
+  }, [mapInstance, featureCollections]);
+
+  return {
+    currentRoadPoints,
+    fitMapToFeatureCollections,
+    handleFeatureHover,
+    handleMapClick,
+    handleMapRightClick,
+    handleMouseMove,
+    hoveredFeature,
+    layerIds,
+    mousePosition,
+    updateLayerIds
+  };
+};

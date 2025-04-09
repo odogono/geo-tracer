@@ -181,7 +181,6 @@ export const FeatureTree = () => {
     >
       <Tree
         data={treeData}
-        height={400}
         indent={24}
         openByDefault={true}
         rowHeight={32}

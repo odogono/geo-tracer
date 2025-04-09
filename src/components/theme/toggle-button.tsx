@@ -6,7 +6,7 @@ export const ThemeToggleButton = () => {
   return (
     <button
       aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-      className="fixed top-40 left-4 p-2 rounded-full 
+      className="fixed top-44 left-4 p-2 rounded-full 
         bg-gray-900 dark:bg-opacity-20 dark:backdrop-blur-sm
         hover:bg-gray-700 dark:hover:bg-opacity-30 
         transition-colors"
