@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { Feature, FeatureCollection } from 'geojson';
-import { Box, Boxes, Library } from 'lucide-react';
+import { Box, Boxes, Library, Trash2 } from 'lucide-react';
 import { NodeApi, Tree } from 'react-arborist';
 
 import { useTheme } from '@contexts/theme/context';
@@ -28,7 +28,13 @@ type NodeProps = {
 
 // Node component for rendering each tree item
 const TreeNodeComponent = ({ dragHandle, node, style }: NodeProps) => {
-  const { highlightedFeature, setHighlightedFeature } = useWorld();
+  const {
+    featureCollections,
+    highlightedFeature,
+    setFeatureCollections,
+    setHighlightedFeature
+  } = useWorld();
+  const [isHovered, setIsHovered] = useState(false);
 
   const data = node.data;
 
@@ -48,10 +54,54 @@ const TreeNodeComponent = ({ dragHandle, node, style }: NodeProps) => {
     icon = <Box />;
   }
 
+  const handleDelete = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation(); // Prevent triggering the parent onClick
+
+      if (!isFeature) {
+        return;
+      }
+
+      // Find the collection that contains this feature
+      const collectionIndex = featureCollections.findIndex(collection =>
+        collection.features.includes(node.data.data as Feature)
+      );
+
+      if (collectionIndex === -1) {
+        return;
+      }
+
+      // Create a new array of collections with the feature removed
+      const newCollections = [...featureCollections];
+      newCollections[collectionIndex] = {
+        ...newCollections[collectionIndex],
+        features: newCollections[collectionIndex].features.filter(
+          feature => feature !== node.data.data
+        )
+      };
+
+      // Update the collections
+      setFeatureCollections(newCollections);
+
+      // If the deleted feature was highlighted, clear the highlight
+      if (highlightedFeature === node.data.data) {
+        setHighlightedFeature(null);
+      }
+    },
+    [
+      featureCollections,
+      highlightedFeature,
+      isFeature,
+      node.data.data,
+      setFeatureCollections,
+      setHighlightedFeature
+    ]
+  );
+
   return (
     <div
       className={cn(
-        'flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-500',
+        'flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-500 group',
         isHighlighted && 'bg-blue-100 dark:bg-blue-900'
       )}
       onClick={() => {
@@ -59,11 +109,22 @@ const TreeNodeComponent = ({ dragHandle, node, style }: NodeProps) => {
           setHighlightedFeature(node.data.data as Feature);
         }
       }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       ref={dragHandle}
       style={style}
     >
       <span className="text-sm">{icon}</span>
-      <span className="text-sm">{node.data.name}</span>
+      <span className="text-sm flex-grow">{node.data.name}</span>
+      {isFeature && isHovered && (
+        <button
+          className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+          onClick={handleDelete}
+          title="Delete feature"
+        >
+          <Trash2 size={16} />
+        </button>
+      )}
     </div>
   );
 };
