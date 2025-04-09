@@ -5,7 +5,7 @@ import { Feature, FeatureCollection } from 'geojson';
 import { useWorld } from '@contexts/world/use-world';
 import { getFeatureGeometryType, getLineStringCoordinates } from '@helpers/geo';
 import { createLog } from '@helpers/log';
-import { bbox, lineString, length as turf_length } from '@turf/turf';
+import { bbox, lineString, simplify, length as turf_length } from '@turf/turf';
 import { EdgeFeature, RouteFeatureProperties } from '@types';
 
 const SNAP_DISTANCE_PX = 50;
@@ -30,6 +30,7 @@ export const useMapInteractions = (mapInstance: maplibregl.Map | null) => {
   );
   const [hoveredFeature, setHoveredFeature] = useState<Feature | null>(null);
   const [layerIds, setLayerIds] = useState<string[]>([]);
+  const [isDrawing, setIsDrawing] = useState(false);
 
   // Function to fit the map to the bounds of all FeatureCollections
   const fitMapToFeatureCollections = useCallback(() => {
@@ -126,6 +127,24 @@ export const useMapInteractions = (mapInstance: maplibregl.Map | null) => {
       return null;
     },
     [mapInstance, featureCollections]
+  );
+
+  const handleMouseDown = useCallback(
+    (e: maplibregl.MapMouseEvent) => {
+      if (drawMode === 'route') {
+        // Start drawing a route when mouse is pressed down
+        const { lngLat } = e;
+        const cursorPos: GeoJSON.Position = [lngLat.lng, lngLat.lat];
+
+        // In route mode, we don't snap to existing points
+        const newPoint = cursorPos;
+
+        // Initialize the points array with the first point
+        setCurrentRoadPoints([newPoint]);
+        setIsDrawing(true);
+      }
+    },
+    [drawMode]
   );
 
   const handleMapClick = useCallback(
@@ -252,36 +271,126 @@ export const useMapInteractions = (mapInstance: maplibregl.Map | null) => {
 
   const handleMapRightClick = useCallback(
     (e: maplibregl.MapMouseEvent) => {
-      if (drawMode !== 'road') {
+      if (drawMode !== 'road' && drawMode !== 'route') {
         return;
       }
 
       // Cancel the current line by clearing points and current edge
       setCurrentRoadPoints([]);
       setMousePosition(null);
+      setIsDrawing(false);
     },
     [drawMode, setCurrentRoadPoints]
   );
 
   const handleMouseMove = useCallback(
     (e: maplibregl.MapMouseEvent) => {
-      if (
-        drawMode !== 'road' ||
-        !currentRoadPoints ||
-        currentRoadPoints.length === 0
-      ) {
+      if (drawMode === 'road') {
+        if (!currentRoadPoints || currentRoadPoints.length === 0) {
+          return;
+        }
+
+        const { lngLat } = e;
+        const cursorPos: GeoJSON.Position = [lngLat.lng, lngLat.lat];
+
+        // Try to find a point to snap to
+        const snapPoint = findNearestPoint(cursorPos);
+        setMousePosition(snapPoint || cursorPos);
+      } else if (drawMode === 'route') {
+        const { lngLat } = e;
+        const cursorPos: GeoJSON.Position = [lngLat.lng, lngLat.lat];
+
+        // In route mode, we don't snap to existing points
+        const newPoint = cursorPos;
+
+        // Update the mouse position for preview
+        setMousePosition(newPoint);
+
+        // Add the point to the current road points if we're drawing
+        if (isDrawing && currentRoadPoints && currentRoadPoints.length > 0) {
+          // Only add a new point if it's significantly different from the last one
+          const lastPoint = currentRoadPoints.at(-1);
+          if (!lastPoint) {
+            return;
+          }
+
+          const distance = Math.sqrt(
+            Math.pow(newPoint[0] - lastPoint[0], 2) +
+              Math.pow(newPoint[1] - lastPoint[1], 2)
+          );
+
+          // Add a point if it's at least 0.0001 degrees away from the last point
+          // This prevents adding too many points when the mouse moves slowly
+          if (distance > 0.0001) {
+            setCurrentRoadPoints([...currentRoadPoints, newPoint]);
+          }
+        }
+      }
+    },
+    [drawMode, currentRoadPoints, findNearestPoint, isDrawing]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    if (
+      drawMode === 'route' &&
+      isDrawing &&
+      currentRoadPoints &&
+      currentRoadPoints.length > 1
+    ) {
+      // Create a LineString from the collected points
+      const lineStringFeature = lineString(currentRoadPoints);
+
+      // Simplify the LineString using turf
+      const simplifiedLineString = simplify(lineStringFeature, {
+        highQuality: true,
+        tolerance: 0.0001
+      });
+
+      // Create a new route feature
+      const routeFeature: GeoJSON.Feature<
+        GeoJSON.LineString,
+        RouteFeatureProperties
+      > = {
+        geometry: simplifiedLineString.geometry,
+        properties: {
+          type: 'route'
+        },
+        type: 'Feature'
+      };
+
+      // Add the route to the currently selected collection
+      const currentCollection =
+        featureCollections[selectedFeatureCollectionIndex];
+      if (!currentCollection) {
         return;
       }
 
-      const { lngLat } = e;
-      const cursorPos: GeoJSON.Position = [lngLat.lng, lngLat.lat];
+      // Update the selected collection with the new feature
+      const updatedCollection = {
+        ...currentCollection,
+        features: [...currentCollection.features, routeFeature]
+      };
 
-      // Try to find a point to snap to
-      const snapPoint = findNearestPoint(cursorPos);
-      setMousePosition(snapPoint || cursorPos);
-    },
-    [drawMode, currentRoadPoints, findNearestPoint]
-  );
+      // Update the feature collections array
+      const newFeatureCollections = [...featureCollections];
+      newFeatureCollections[selectedFeatureCollectionIndex] = updatedCollection;
+      setFeatureCollections(newFeatureCollections);
+
+      // Reset the drawing state
+      setCurrentRoadPoints([]);
+      setMousePosition(null);
+      setIsDrawing(false);
+
+      log.debug('[handleMouseUp] Added simplified route', routeFeature);
+    }
+  }, [
+    drawMode,
+    isDrawing,
+    currentRoadPoints,
+    featureCollections,
+    selectedFeatureCollectionIndex,
+    setFeatureCollections
+  ]);
 
   // Function to handle feature hover
   const handleFeatureHover = useCallback(
@@ -341,7 +450,9 @@ export const useMapInteractions = (mapInstance: maplibregl.Map | null) => {
     handleFeatureHover,
     handleMapClick,
     handleMapRightClick,
+    handleMouseDown,
     handleMouseMove,
+    handleMouseUp,
     hoveredFeature,
     layerIds,
     mousePosition,

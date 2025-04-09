@@ -32,7 +32,7 @@ export const MapLayers: React.FC<MapLayersProps> = ({
   selectedFeatureCollectionIndex
 }) => {
   const { theme } = useTheme();
-  const { featureCollections, highlightedFeature } = useWorld();
+  const { drawMode, featureCollections, highlightedFeature } = useWorld();
 
   // Create preview line for road drawing
   const previewLine =
@@ -47,6 +47,24 @@ export const MapLayers: React.FC<MapLayersProps> = ({
           },
           properties: {
             type: 'preview'
+          },
+          type: 'Feature' as const
+        }
+      : null;
+
+  // Create a preview of the entire route being drawn
+  const routePreviewLine =
+    drawMode === 'route' &&
+    currentRoadPoints &&
+    currentRoadPoints.length > 0 &&
+    mousePosition
+      ? {
+          geometry: {
+            coordinates: [...currentRoadPoints, mousePosition],
+            type: 'LineString' as const
+          },
+          properties: {
+            type: 'route-preview'
           },
           type: 'Feature' as const
         }
@@ -148,8 +166,25 @@ export const MapLayers: React.FC<MapLayersProps> = ({
         </Source>
       )}
 
+      {/* Render route preview line for route drawing */}
+      {routePreviewLine && (
+        <Source data={routePreviewLine} type="geojson">
+          <Layer
+            id="route-preview"
+            paint={{
+              'line-color':
+                COLLECTION_COLORS[
+                  selectedFeatureCollectionIndex % COLLECTION_COLORS.length
+                ],
+              'line-width': 3
+            }}
+            type="line"
+          />
+        </Source>
+      )}
+
       {/* Render preview line for road drawing */}
-      {previewLine && (
+      {previewLine && drawMode === 'road' && (
         <Source data={previewLine} type="geojson">
           <Layer
             id="preview"

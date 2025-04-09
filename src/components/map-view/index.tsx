@@ -31,7 +31,9 @@ export const MapView = () => {
     handleFeatureHover,
     handleMapClick,
     handleMapRightClick,
+    handleMouseDown,
     handleMouseMove,
+    handleMouseUp,
     hoveredFeature,
     layerIds,
     mousePosition,
@@ -49,6 +51,7 @@ export const MapView = () => {
     <div className="w-screen h-screen">
       <LibreMap
         cursor={cursorStyle}
+        dragPan={drawMode !== 'route'}
         initialViewState={{
           latitude: 0,
           longitude: 0,
@@ -58,7 +61,9 @@ export const MapView = () => {
         onClick={handleMapClick}
         onContextMenu={handleMapRightClick}
         onLoad={e => setMapInstance(e.target)}
-        onMouseMove={drawMode === 'road' ? handleMouseMove : handleFeatureHover}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
         style={{
           height: '100%',
           width: '100%'
