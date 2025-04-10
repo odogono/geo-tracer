@@ -1,4 +1,49 @@
 import { nearestPointOnLine } from '@turf/nearest-point-on-line';
+import { BBox, Feature, Polygon, Position } from 'geojson';
+
+export const bboxToFeature = (bbox: BBox): Feature => {
+  const [minX, minY, maxX, maxY] = bbox;
+
+  const polygon: Polygon = {
+    coordinates: [
+      [
+        [minX, minY],
+        [maxX, minY],
+        [maxX, maxY],
+        [minX, maxY],
+        [minX, minY]
+      ]
+    ],
+    type: 'Polygon'
+  };
+
+  return {
+    geometry: polygon,
+    properties: {},
+    type: 'Feature'
+  };
+};
+
+export const calculateDistance = (coordinates: Position[]) => {
+  let totalDistance = 0;
+  for (let i = 1; i < coordinates.length; i++) {
+    const [lon1, lat1] = coordinates[i - 1];
+    const [lon2, lat2] = coordinates[i];
+    // Using the Haversine formula for distance calculation
+    const R = 6371; // Earth's radius in km
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    totalDistance += R * c;
+  }
+  return `${totalDistance.toFixed(2)} km`;
+};
 
 export const getFeatureCoordinates = (feature: GeoJSON.Feature) => {
   if (feature.geometry.type === 'Point') {
@@ -26,10 +71,16 @@ export const isPointFeature = (feature: GeoJSON.Feature | null) =>
 export const isLineStringFeature = (feature: GeoJSON.Feature | null) =>
   feature?.geometry.type === 'LineString';
 
+type FindPointOnNearestFeatureOptions = {
+  maxDistance?: number;
+};
+
 export const findPointOnNearestFeature = (
   point: GeoJSON.Position,
-  features: GeoJSON.FeatureCollection
+  features: GeoJSON.FeatureCollection,
+  options: FindPointOnNearestFeatureOptions = {}
 ) => {
+  const maxDistance = options.maxDistance || 0.015; // 15 metres
   let nearestPosition: GeoJSON.Position | undefined = undefined;
   let nearestDistance: number | undefined = Infinity;
   let nearestResult: GeoJSON.Feature<GeoJSON.Point> | undefined = undefined;
@@ -49,7 +100,7 @@ export const findPointOnNearestFeature = (
     const nearestPoint = result.geometry.coordinates;
     const distance = result.properties.dist;
 
-    if (distance < nearestDistance) {
+    if (distance < nearestDistance && distance < maxDistance) {
       nearestDistance = distance;
       nearestPosition = nearestPoint;
       nearestResult = result;

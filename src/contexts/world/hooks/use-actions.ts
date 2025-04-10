@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
 
 import Rbush from '@turf/geojson-rbush';
-import { Feature, FeatureCollection } from 'geojson';
+import { simplify } from '@turf/turf';
+import { Feature, FeatureCollection, LineString } from 'geojson';
 import { useSetAtom } from 'jotai';
 
 import { findPointOnNearestFeature } from '@helpers/geo';
@@ -46,14 +47,19 @@ export const useActions = ({ featureCollections }: UseActionsProps) => {
         continue;
       }
 
-      const intersectingRoads = rtree.search(feature);
+      const simplifiedLineString = simplify(feature, {
+        highQuality: true,
+        tolerance: 0.000_01
+      }) as Feature<LineString>;
+
+      const intersectingRoads = rtree.search(simplifiedLineString);
 
       log.debug('rtree.search', intersectingRoads);
 
       // iterate over the coordinates of the feature
       // determine the point on the closest road to the coordinate
       // add the point to the computedCollection
-      for (const coordinate of feature.geometry.coordinates) {
+      for (const coordinate of simplifiedLineString.geometry.coordinates) {
         const {
           distance: nearestDistance,
           position: nearestPosition,
