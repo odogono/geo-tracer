@@ -26,36 +26,39 @@ export const isPointFeature = (feature: GeoJSON.Feature | null) =>
 export const isLineStringFeature = (feature: GeoJSON.Feature | null) =>
   feature?.geometry.type === 'LineString';
 
-/**
- * Finds the nearest point on a LineString from a given point
- * @param point The point to find the nearest point from
- * @param lineString The LineString to find the nearest point on
- * @returns The nearest point on the LineString
- */
-export const findNearestPointOnLine = (
+export const findPointOnNearestFeature = (
   point: GeoJSON.Position,
-  lineString: GeoJSON.LineString
-): GeoJSON.Position => {
-  // Create a GeoJSON Point feature from the input point
-  const pointFeature: GeoJSON.Feature<GeoJSON.Point> = {
-    geometry: {
-      coordinates: point,
-      type: 'Point' as const
-    },
-    properties: {},
-    type: 'Feature' as const
+  features: GeoJSON.FeatureCollection
+) => {
+  let nearestPosition: GeoJSON.Position | undefined = undefined;
+  let nearestDistance: number | undefined = Infinity;
+  let nearestResult: GeoJSON.Feature<GeoJSON.Point> | undefined = undefined;
+
+  for (const feature of features.features) {
+    if (feature.geometry.type !== 'LineString') {
+      continue;
+    }
+
+    // Find the nearest point on this road to the coordinate
+    const result = nearestPointOnLine(feature.geometry, point);
+
+    if (!result) {
+      continue;
+    }
+    // const { properties } = result;
+    const nearestPoint = result.geometry.coordinates;
+    const distance = result.properties.dist;
+
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestPosition = nearestPoint;
+      nearestResult = result;
+    }
+  }
+
+  return {
+    distance: nearestDistance,
+    position: nearestPosition,
+    result: nearestResult
   };
-
-  // Create a GeoJSON LineString feature from the input lineString
-  const lineStringFeature: GeoJSON.Feature<GeoJSON.LineString> = {
-    geometry: lineString,
-    properties: {},
-    type: 'Feature' as const
-  };
-
-  // Find the nearest point on the line
-  const result = nearestPointOnLine(lineStringFeature, pointFeature);
-
-  // Return the coordinates of the nearest point
-  return result.geometry.coordinates;
 };

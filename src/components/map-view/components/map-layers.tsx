@@ -157,8 +157,8 @@ export const MapLayers: React.FC<MapLayersProps> = ({
               paint={{
                 'circle-color': theme === 'dark' ? '#ffffff' : '#000000',
                 'circle-radius': 8,
-                'circle-stroke-color': '#00ff00',
-                'circle-stroke-width': 3
+                'circle-stroke-color': '#ff0000',
+                'circle-stroke-width': 5
               }}
               type="circle"
             />

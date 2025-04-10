@@ -4,7 +4,7 @@ import Rbush from '@turf/geojson-rbush';
 import { Feature, FeatureCollection } from 'geojson';
 import { useSetAtom } from 'jotai';
 
-import { findNearestPointOnLine } from '@helpers/geo';
+import { findPointOnNearestFeature } from '@helpers/geo';
 import { createLog } from '@helpers/log';
 
 import { setFeatureCollectionAtIndexAtom } from '../atoms';
@@ -54,33 +54,51 @@ export const useActions = ({ featureCollections }: UseActionsProps) => {
       // determine the point on the closest road to the coordinate
       // add the point to the computedCollection
       for (const coordinate of feature.geometry.coordinates) {
-        const intersectingRoad = intersectingRoads.features.find(road => {
-          if (road.geometry.type !== 'LineString') {
-            return false;
-          }
+        const {
+          distance: nearestDistance,
+          position: nearestPosition,
+          result: nearestResult
+        } = findPointOnNearestFeature(coordinate, roadCollection);
 
-          // Find the nearest point on this road to the coordinate
-          const nearestPoint = findNearestPointOnLine(
-            coordinate,
-            road.geometry
+        if (nearestPosition && nearestResult) {
+          log.debug(
+            'found nearest position',
+            nearestDistance * 1000,
+            nearestResult
           );
-
-          // Calculate the distance between the coordinate and the nearest point
-          // If the distance is small enough, consider this road as the closest one
-          const distance = Math.sqrt(
-            Math.pow(coordinate[0] - nearestPoint[0], 2) +
-              Math.pow(coordinate[1] - nearestPoint[1], 2)
+          computedCollection.features.push(
+            nearestResult
+            // createMarkerFeature(nearestPosition)
           );
+        }
 
-          // log the distance in metres
-          log.debug('distance', distance * 1000);
+        // const intersectingRoad = intersectingRoads.features.find(road => {
+        //   if (road.geometry.type !== 'LineString') {
+        //     return false;
+        //   }
 
-          // Add the nearest point to the computed collection
-          computedCollection.features.push(createMarkerFeature(nearestPoint));
+        //   // Find the nearest point on this road to the coordinate
+        //   const nearestPoint = findNearestPointOnLine(
+        //     coordinate,
+        //     road.geometry
+        //   );
 
-          // Return true if this is the closest road (you can adjust the threshold)
-          return distance < 0.001;
-        });
+        //   // Calculate the distance between the coordinate and the nearest point
+        //   // If the distance is small enough, consider this road as the closest one
+        //   const distance = Math.sqrt(
+        //     Math.pow(coordinate[0] - nearestPoint[0], 2) +
+        //       Math.pow(coordinate[1] - nearestPoint[1], 2)
+        //   );
+
+        //   // log the distance in metres
+        //   log.debug('distance', distance * 1000);
+
+        //   // Add the nearest point to the computed collection
+        //   computedCollection.features.push(createMarkerFeature(nearestPoint));
+
+        //   // Return true if this is the closest road (you can adjust the threshold)
+        //   return distance < 0.001;
+        // });
       }
     }
 

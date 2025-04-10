@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react';
 
+import { bbox, lineString, simplify, length as turf_length } from '@turf/turf';
 import { Feature, FeatureCollection } from 'geojson';
 
 import { useWorld } from '@contexts/world/use-world';
 import { getFeatureGeometryType, getLineStringCoordinates } from '@helpers/geo';
 import { createLog } from '@helpers/log';
-import { bbox, lineString, simplify, length as turf_length } from '@turf/turf';
 import {
   EdgeFeature,
   FeatureCollectionWithProps,
@@ -327,7 +327,7 @@ export const useMapInteractions = (mapInstance: maplibregl.Map | null) => {
 
           // Add a point if it's at least 0.0001 degrees away from the last point
           // This prevents adding too many points when the mouse moves slowly
-          if (distance > 0.0001) {
+          if (distance > 0.000_01) {
             setCurrentRoadPoints([...currentRoadPoints, newPoint]);
           }
         }
@@ -349,8 +349,14 @@ export const useMapInteractions = (mapInstance: maplibregl.Map | null) => {
       // Simplify the LineString using turf
       const simplifiedLineString = simplify(lineStringFeature, {
         highQuality: true,
-        tolerance: 0.001
+        tolerance: 0.000_01
       });
+
+      log.debug(
+        '[handleMouseUp] simplifiedLineString',
+        lineStringFeature.geometry.coordinates.length,
+        simplifiedLineString.geometry.coordinates.length
+      );
 
       // Create a new route feature
       const routeFeature: GeoJSON.Feature<
