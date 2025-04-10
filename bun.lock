@@ -5,6 +5,8 @@
       "name": "vite-react-starter",
       "dependencies": {
         "@monaco-editor/react": "^4.7.0",
+        "@turf/geojson-rbush": "^7.2.0",
+        "@turf/nearest-point-on-line": "^7.2.0",
         "@turf/turf": "^7.2.0",
         "clsx": "^2.1.1",
         "jotai": "^2.12.2",

@@ -13,6 +13,7 @@
   "importOrder": [
     "^react$",
     "",
+    "^@turf.*",
     "<THIRD_PARTY_MODULES>",
     "",
     "^@.*",

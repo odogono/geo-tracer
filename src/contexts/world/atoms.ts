@@ -101,6 +101,23 @@ export const setFeatureCollectionAtom = atom(
   }
 );
 
+/**
+ * Set a feature collection at a specific index
+ */
+export const setFeatureCollectionAtIndexAtom = atom(
+  null,
+  (get, set, index: number, featureCollection: FeatureCollectionWithProps) => {
+    const featureCollections = get(featureCollectionsAtom);
+
+    // featureCollections[index] = featureCollection;
+
+    const newFeatureCollections = [...featureCollections];
+    newFeatureCollections[index] = featureCollection;
+
+    set(featureCollectionsAtom, newFeatureCollections);
+  }
+);
+
 // Current road being drawn
 export const currentRoadPointsAtom = atom<GeoJSON.Position[] | null>(null);
 

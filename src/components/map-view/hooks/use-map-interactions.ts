@@ -349,7 +349,7 @@ export const useMapInteractions = (mapInstance: maplibregl.Map | null) => {
       // Simplify the LineString using turf
       const simplifiedLineString = simplify(lineStringFeature, {
         highQuality: true,
-        tolerance: 0.0001
+        tolerance: 0.001
       });
 
       // Create a new route feature
