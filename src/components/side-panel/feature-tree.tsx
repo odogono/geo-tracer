@@ -111,6 +111,49 @@ const TreeNodeComponent = ({ dragHandle, node, style }: NodeProps) => {
     ]
   );
 
+  const handleDeleteCollection = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation(); // Prevent triggering the parent onClick
+
+      if (!isFeatureCollection) {
+        return;
+      }
+
+      // Create a new array of collections with the features cleared
+      const newCollections = [...featureCollections];
+      newCollections[node.data.index] = {
+        ...newCollections[node.data.index],
+        features: []
+      };
+
+      // Update the collections
+      setFeatureCollections(newCollections as FeatureCollectionWithProps[]);
+
+      // If the deleted collection was selected, clear the selection
+      if (selectedFeatureCollectionIndex === node.data.index) {
+        setSelectedFeatureCollectionIndex(-1);
+      }
+
+      // If any highlighted feature was in this collection, clear the highlight
+      if (
+        highlightedFeature &&
+        newCollections[node.data.index].features.includes(highlightedFeature)
+      ) {
+        setHighlightedFeature(null);
+      }
+    },
+    [
+      featureCollections,
+      highlightedFeature,
+      isFeatureCollection,
+      node.data.index,
+      selectedFeatureCollectionIndex,
+      setFeatureCollections,
+      setHighlightedFeature,
+      setSelectedFeatureCollectionIndex
+    ]
+  );
+
   return (
     <div
       className={cn(
@@ -137,6 +180,15 @@ const TreeNodeComponent = ({ dragHandle, node, style }: NodeProps) => {
           className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
           onClick={handleDelete}
           title="Delete feature"
+        >
+          <Trash2 size={16} />
+        </button>
+      )}
+      {isFeatureCollection && isHovered && (
+        <button
+          className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+          onClick={handleDeleteCollection}
+          title="Clear all features in collection"
         >
           <Trash2 size={16} />
         </button>
