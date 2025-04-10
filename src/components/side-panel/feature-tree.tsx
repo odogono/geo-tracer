@@ -94,7 +94,7 @@ const TreeNodeComponent = ({ dragHandle, node, style }: NodeProps) => {
       };
 
       // Update the collections
-      setFeatureCollections(newCollections);
+      setFeatureCollections(newCollections as FeatureCollectionWithProps[]);
 
       // If the deleted feature was highlighted, clear the highlight
       if (highlightedFeature === node.data.data) {

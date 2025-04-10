@@ -54,7 +54,7 @@ export const SidePanel = () => {
 
       const result = findFeatureAtTextPosition(text, cursorPosition);
 
-      log.debug('findContainingObjectInJson', result);
+      // log.debug('findContainingObjectInJson', result);
 
       // if (result) {
       setHighlightedFeature(result ? (result as unknown as EdgeFeature) : null);
@@ -113,9 +113,9 @@ export const SidePanel = () => {
       // Add cursor position change listener
       editor.onDidChangeCursorPosition(() => {
         const position = editor.getPosition();
-        log.debug('onDidChangeCursorPosition', {
-          position
-        });
+        // log.debug('onDidChangeCursorPosition', {
+        //   position
+        // });
         if (position) {
           findFeatureAtCursor(position);
         }

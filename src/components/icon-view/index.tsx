@@ -1,15 +1,17 @@
 import { useCallback } from 'react';
 
-import { PenLine, Route, SquareDashed } from 'lucide-react';
+import { DraftingCompass, PenLine, Route, SquareDashed } from 'lucide-react';
 
 import { useTheme } from '@contexts/theme/context';
 import { useWorld } from '@contexts/world/use-world';
 import { cn } from '@helpers/tailwind';
 import { DrawMode } from '@types';
 
+const iconY = (offset: number) => offset * 48 + 96 + 'px';
+
 export const IconView = () => {
   const { theme } = useTheme();
-  const { drawMode, setDrawMode } = useWorld();
+  const { calculateRoute, drawMode, setDrawMode } = useWorld();
 
   const handleSetDrawMode = useCallback(
     (mode: DrawMode) => {
@@ -27,7 +29,7 @@ export const IconView = () => {
       <button
         aria-label={`Select Mode`}
         className={cn(
-          'fixed top-4 left-4 p-2 rounded-full',
+          `fixed left-4 p-2 rounded-full`,
           'bg-gray-500 dark:bg-opacity-20 dark:backdrop-blur-sm',
           'hover:bg-gray-700 dark:hover:bg-opacity-30',
           'transition-colors',
@@ -37,13 +39,14 @@ export const IconView = () => {
           }
         )}
         onClick={() => handleSetDrawMode('select')}
+        style={{ top: iconY(0) }}
       >
         <SquareDashed />
       </button>
       <button
         aria-label={`Select Route`}
         className={cn(
-          'fixed top-18 left-4 p-2 rounded-full',
+          `fixed left-4 p-2 rounded-full`,
           'bg-gray-500 dark:bg-opacity-20 dark:backdrop-blur-sm',
           'hover:bg-gray-700 dark:hover:bg-opacity-30',
           'transition-colors',
@@ -53,13 +56,14 @@ export const IconView = () => {
           }
         )}
         onClick={() => handleSetDrawMode('route')}
+        style={{ top: iconY(1) }}
       >
         <PenLine />
       </button>
       <button
         aria-label={`Draw Roads`}
         className={cn(
-          'fixed top-32 left-4 p-2 rounded-full',
+          `fixed left-4 p-2 rounded-full`,
           'bg-gray-500 dark:bg-opacity-20 dark:backdrop-blur-sm',
           'hover:bg-gray-700 dark:hover:bg-opacity-30',
           'transition-colors',
@@ -69,8 +73,23 @@ export const IconView = () => {
           }
         )}
         onClick={() => handleSetDrawMode('road')}
+        style={{ top: iconY(2) }}
       >
         <Route />
+      </button>
+      <button
+        aria-label={`Calculate`}
+        className={cn(
+          `fixed left-4 p-2 rounded-full`,
+          'bg-gray-500 dark:bg-opacity-20 dark:backdrop-blur-sm',
+          'hover:bg-gray-700 dark:hover:bg-opacity-30',
+          'active:bg-orange-500 dark:active:bg-opacity-30',
+          'transition-colors'
+        )}
+        onClick={() => calculateRoute()}
+        style={{ top: iconY(3) }}
+      >
+        <DraftingCompass />
       </button>
     </div>
   );

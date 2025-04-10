@@ -6,7 +6,11 @@ import { useWorld } from '@contexts/world/use-world';
 import { getFeatureGeometryType, getLineStringCoordinates } from '@helpers/geo';
 import { createLog } from '@helpers/log';
 import { bbox, lineString, simplify, length as turf_length } from '@turf/turf';
-import { EdgeFeature, RouteFeatureProperties } from '@types';
+import {
+  EdgeFeature,
+  FeatureCollectionWithProps,
+  RouteFeatureProperties
+} from '@types';
 
 const SNAP_DISTANCE_PX = 50;
 const log = createLog('useMapInteractions');
@@ -218,7 +222,9 @@ export const useMapInteractions = (mapInstance: maplibregl.Map | null) => {
         const newFeatureCollections = [...featureCollections];
         newFeatureCollections[selectedFeatureCollectionIndex] =
           updatedCollection;
-        setFeatureCollections(newFeatureCollections);
+        setFeatureCollections(
+          newFeatureCollections as FeatureCollectionWithProps[]
+        );
 
         log.debug(
           '[handleMapClick] newFeatureCollections',
@@ -374,7 +380,9 @@ export const useMapInteractions = (mapInstance: maplibregl.Map | null) => {
       // Update the feature collections array
       const newFeatureCollections = [...featureCollections];
       newFeatureCollections[selectedFeatureCollectionIndex] = updatedCollection;
-      setFeatureCollections(newFeatureCollections);
+      setFeatureCollections(
+        newFeatureCollections as FeatureCollectionWithProps[]
+      );
 
       // Reset the drawing state
       setCurrentRoadPoints([]);

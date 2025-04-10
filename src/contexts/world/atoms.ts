@@ -79,7 +79,7 @@ export const featureCollectionAtom = atom<FeatureCollection | null>(get => {
  */
 export const setFeatureCollectionAtom = atom(
   null,
-  (get, set, featureCollection: FeatureCollection) => {
+  (get, set, featureCollection: FeatureCollectionWithProps) => {
     const featureCollections = get(featureCollectionsAtom);
     // log.debug(
     //   '[setFeatureCollectionAtom] featureCollections',
