@@ -2,12 +2,13 @@ import { useCallback } from 'react';
 
 import Rbush from '@turf/geojson-rbush';
 import { simplify } from '@turf/turf';
-import { Feature, FeatureCollection, LineString } from 'geojson';
+import { Feature, LineString } from 'geojson';
 import { useSetAtom } from 'jotai';
 
 import { findPointOnNearestFeature } from '@helpers/geo';
 import { createLog } from '@helpers/log';
 
+import { FeatureCollectionWithProps } from '../../../types';
 import { setFeatureCollectionAtIndexAtom } from '../atoms';
 import type { UseModelResult } from './use-model';
 
@@ -32,8 +33,11 @@ export const useActions = ({ featureCollections }: UseActionsProps) => {
 
     rtree.load(roadCollection);
 
-    const computedCollection: FeatureCollection = {
+    const computedCollection: FeatureCollectionWithProps = {
       features: [],
+      properties: {
+        name: 'computed'
+      },
       type: 'FeatureCollection'
     };
 
@@ -54,57 +58,51 @@ export const useActions = ({ featureCollections }: UseActionsProps) => {
 
       const intersectingRoads = rtree.search(simplifiedLineString);
 
-      log.debug('rtree.search', intersectingRoads);
+      // log.debug('rtree.search', intersectingRoads);
+      const coordinates = simplifiedLineString.geometry.coordinates;
+
+      // for (let ii = 0; ii < coordinates.length - 1; ii++) {
+      //   const a = coordinates[ii];
+      //   const b = coordinates[ii + 1];
+
+      //   const line = lineString([a, b]);
+
+      //   const mostSimilarLine = findMostSimilarLine(line, roadCollection);
+
+      //   if (!mostSimilarLine) {
+      //     continue;
+      //   }
+
+      //   const pointA = findPointOnLineString(a, mostSimilarLine);
+
+      //   if (pointA) {
+      //     computedCollection.features.push(pointA);
+      //   }
+
+      //   const pointB = findPointOnLineString(b, mostSimilarLine);
+
+      //   if (pointB) {
+      //     computedCollection.features.push(pointB);
+      //   }
+
+      //   // break;
+      // }
 
       // iterate over the coordinates of the feature
       // determine the point on the closest road to the coordinate
       // add the point to the computedCollection
       for (const coordinate of simplifiedLineString.geometry.coordinates) {
-        const {
-          distance: nearestDistance,
-          position: nearestPosition,
-          result: nearestResult
-        } = findPointOnNearestFeature(coordinate, roadCollection);
+        const points = findPointOnNearestFeature(coordinate, roadCollection);
 
-        if (nearestPosition && nearestResult) {
-          log.debug(
-            'found nearest position',
-            nearestDistance * 1000,
-            nearestResult
-          );
-          computedCollection.features.push(
-            nearestResult
-            // createMarkerFeature(nearestPosition)
-          );
+        if (points.length > 0) {
+          // log.debug(
+          //   'found nearest position',
+          //   nearestDistance * 1000,
+          //   nearestResult
+          // );
+          computedCollection.features.push(...points);
+          // break;
         }
-
-        // const intersectingRoad = intersectingRoads.features.find(road => {
-        //   if (road.geometry.type !== 'LineString') {
-        //     return false;
-        //   }
-
-        //   // Find the nearest point on this road to the coordinate
-        //   const nearestPoint = findNearestPointOnLine(
-        //     coordinate,
-        //     road.geometry
-        //   );
-
-        //   // Calculate the distance between the coordinate and the nearest point
-        //   // If the distance is small enough, consider this road as the closest one
-        //   const distance = Math.sqrt(
-        //     Math.pow(coordinate[0] - nearestPoint[0], 2) +
-        //       Math.pow(coordinate[1] - nearestPoint[1], 2)
-        //   );
-
-        //   // log the distance in metres
-        //   log.debug('distance', distance * 1000);
-
-        //   // Add the nearest point to the computed collection
-        //   computedCollection.features.push(createMarkerFeature(nearestPoint));
-
-        //   // Return true if this is the closest road (you can adjust the threshold)
-        //   return distance < 0.001;
-        // });
       }
     }
 

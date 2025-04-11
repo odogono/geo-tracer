@@ -1,5 +1,5 @@
 import { nearestPointOnLine } from '@turf/nearest-point-on-line';
-import { BBox, Feature, Polygon, Position } from 'geojson';
+import { BBox, Feature, LineString, Point, Polygon, Position } from 'geojson';
 
 export const bboxToFeature = (bbox: BBox): Feature => {
   const [minX, minY, maxX, maxY] = bbox;
@@ -75,15 +75,25 @@ type FindPointOnNearestFeatureOptions = {
   maxDistance?: number;
 };
 
+export const findPointOnLineString = (
+  point: GeoJSON.Position,
+  line: Feature<LineString>
+) => {
+  const candidate = nearestPointOnLine(line.geometry, point);
+  return candidate;
+};
+
 export const findPointOnNearestFeature = (
   point: GeoJSON.Position,
   features: GeoJSON.FeatureCollection,
   options: FindPointOnNearestFeatureOptions = {}
 ) => {
   const maxDistance = options.maxDistance || 0.015; // 15 metres
-  let nearestPosition: GeoJSON.Position | undefined = undefined;
+  // let nearestPosition: GeoJSON.Position | undefined = undefined;
   let nearestDistance: number | undefined = Infinity;
   let nearestResult: GeoJSON.Feature<GeoJSON.Point> | undefined = undefined;
+
+  const result: Feature<Point>[] = [];
 
   for (const feature of features.features) {
     if (feature.geometry.type !== 'LineString') {
@@ -91,25 +101,28 @@ export const findPointOnNearestFeature = (
     }
 
     // Find the nearest point on this road to the coordinate
-    const result = nearestPointOnLine(feature.geometry, point);
+    const candidate = nearestPointOnLine(feature.geometry, point);
 
-    if (!result) {
+    if (!candidate) {
       continue;
     }
     // const { properties } = result;
-    const nearestPoint = result.geometry.coordinates;
-    const distance = result.properties.dist;
+    const nearestPoint = candidate.geometry.coordinates;
+    const distance = candidate.properties.dist;
 
-    if (distance < nearestDistance && distance < maxDistance) {
+    if (distance < maxDistance && distance < nearestDistance) {
       nearestDistance = distance;
-      nearestPosition = nearestPoint;
-      nearestResult = result;
+      // nearestPosition = nearestPoint;
+      nearestResult = candidate;
+      // result.push(candidate);
     }
   }
 
-  return {
-    distance: nearestDistance,
-    position: nearestPosition,
-    result: nearestResult
-  };
+  return nearestResult ? [nearestResult] : [];
+  // return result;
+  // return {
+  //   distance: nearestDistance,
+  //   // position: nearestPosition,
+  //   result: nearestResult
+  // };
 };
