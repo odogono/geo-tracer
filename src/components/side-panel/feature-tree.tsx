@@ -1,7 +1,14 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import { Feature, FeatureCollection } from 'geojson';
-import { Box, Boxes, Library, Trash2 } from 'lucide-react';
+import {
+  Box,
+  Boxes,
+  ChevronDown,
+  ChevronRight,
+  Library,
+  Trash2
+} from 'lucide-react';
 import { NodeApi, Tree } from 'react-arborist';
 
 import { useTheme } from '@contexts/theme/context';
@@ -173,6 +180,18 @@ const TreeNodeComponent = ({ dragHandle, node, style }: NodeProps) => {
       ref={dragHandle}
       style={style}
     >
+      {isFeatureCollection && (
+        <button
+          className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+          onClick={e => {
+            e.stopPropagation();
+            node.toggle();
+          }}
+          title={node.isOpen ? 'Collapse collection' : 'Expand collection'}
+        >
+          {node.isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        </button>
+      )}
       <span className="text-sm">{icon}</span>
       <span className="text-sm flex-grow">{label}</span>
       {isFeature && isHovered && (
@@ -200,6 +219,9 @@ const TreeNodeComponent = ({ dragHandle, node, style }: NodeProps) => {
 export const FeatureTree = () => {
   const { featureCollections } = useWorld();
   const { theme } = useTheme();
+  const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>(
+    {}
+  );
 
   // Convert feature collections to tree data
   const treeData = useMemo(
@@ -223,6 +245,15 @@ export const FeatureTree = () => {
       }),
     [featureCollections]
   );
+
+  // Initialize expanded state for all collection nodes
+  useMemo(() => {
+    const initialExpandedState: Record<string, boolean> = {};
+    treeData.forEach(node => {
+      initialExpandedState[node.id] = true; // Start with all collections expanded
+    });
+    setExpandedNodes(initialExpandedState);
+  }, [treeData]);
 
   return (
     <div

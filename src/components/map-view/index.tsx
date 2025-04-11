@@ -45,7 +45,26 @@ export const MapView = () => {
 
   // Determine cursor style based on hover state
   const cursorStyle =
-    drawMode === 'none' ? (hoveredFeature ? 'pointer' : 'grab') : 'crosshair';
+    drawMode === 'none'
+      ? hoveredFeature
+        ? (() => {
+            const featureType = hoveredFeature.properties?.type;
+            switch (featureType) {
+              case 'route':
+                return 'pointer';
+              case 'edge':
+                return 'move';
+              case 'marker':
+                return 'move';
+              case 'preview':
+              case 'route-preview':
+                return 'crosshair';
+              default:
+                return 'pointer';
+            }
+          })()
+        : 'grab'
+      : 'crosshair';
 
   return (
     <div className="w-screen h-screen">

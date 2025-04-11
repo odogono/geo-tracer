@@ -12,7 +12,7 @@ export const useMapEffects = (
   // Fit map to bounds when drawMode changes
   useEffect(() => {
     if (drawMode === 'none') {
-      fitMapToFeatureCollections();
+      // fitMapToFeatureCollections();
     }
   }, [fitMapToFeatureCollections, drawMode]);
 
