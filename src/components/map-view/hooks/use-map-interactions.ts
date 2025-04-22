@@ -9,6 +9,7 @@ import { createLog } from '@helpers/log';
 import {
   EdgeFeature,
   FeatureCollectionWithProps,
+  RouteCollection,
   RouteFeatureProperties
 } from '@types';
 
@@ -37,39 +38,61 @@ export const useMapInteractions = (mapInstance: maplibregl.Map | null) => {
   const [isDrawing, setIsDrawing] = useState(false);
 
   // Function to fit the map to the bounds of all FeatureCollections
-  const fitMapToFeatureCollections = useCallback(() => {
-    if (!mapInstance || featureCollections.length === 0) {
-      return;
-    }
-
-    try {
-      // Create a combined feature collection for bounds calculation
-      const combinedCollection: FeatureCollection = {
-        features: featureCollections.flatMap(collection => collection.features),
-        type: 'FeatureCollection'
-      };
-
-      // Calculate the bounding box of the combined FeatureCollection
-      const bounds = bbox(combinedCollection);
-      if (bounds[0] === Infinity) {
+  const fitMapToFeatureCollection = useCallback(
+    (featureCollection?: RouteCollection | null | undefined) => {
+      if (!mapInstance || featureCollections.length === 0) {
         return;
       }
 
-      // Fit the map to the bounds with some padding
-      mapInstance.fitBounds(
-        [
-          [bounds[0], bounds[1]], // Southwest corner
-          [bounds[2], bounds[3]] // Northeast corner
-        ],
-        {
-          duration: 1000,
-          padding: 250
+      try {
+        if (featureCollection) {
+          const bounds = bbox(featureCollection);
+          if (bounds[0] !== Infinity) {
+            mapInstance.fitBounds(
+              [
+                [bounds[0], bounds[1]], // Southwest corner
+                [bounds[2], bounds[3]] // Northeast corner
+              ],
+              {
+                duration: 1000,
+                padding: 250
+              }
+            );
+
+            return;
+          }
         }
-      );
-    } catch (error) {
-      log.error('Error fitting map to bounds:', error);
-    }
-  }, [mapInstance, featureCollections]);
+        // Create a combined feature collection for bounds calculation
+        const combinedCollection: FeatureCollection = {
+          features: featureCollections.flatMap(
+            collection => collection.features
+          ),
+          type: 'FeatureCollection'
+        };
+
+        // Calculate the bounding box of the combined FeatureCollection
+        const bounds = bbox(combinedCollection);
+        if (bounds[0] === Infinity) {
+          return;
+        }
+
+        // Fit the map to the bounds with some padding
+        mapInstance.fitBounds(
+          [
+            [bounds[0], bounds[1]], // Southwest corner
+            [bounds[2], bounds[3]] // Northeast corner
+          ],
+          {
+            duration: 1000,
+            padding: 250
+          }
+        );
+      } catch (error) {
+        log.error('Error fitting map to bounds:', error);
+      }
+    },
+    [mapInstance, featureCollections]
+  );
 
   const findNearestPoint = useCallback(
     (cursorPos: GeoJSON.Position): GeoJSON.Position | null => {
@@ -460,7 +483,7 @@ export const useMapInteractions = (mapInstance: maplibregl.Map | null) => {
 
   return {
     currentRoadPoints,
-    fitMapToFeatureCollections,
+    fitMapToFeatureCollection,
     handleFeatureHover,
     handleMapClick,
     handleMapRightClick,

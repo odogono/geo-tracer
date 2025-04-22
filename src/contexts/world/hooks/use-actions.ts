@@ -7,8 +7,8 @@ import { useSetAtom } from 'jotai';
 
 import { findPointOnNearestFeature } from '@helpers/geo';
 import { createLog } from '@helpers/log';
+import { FeatureCollectionWithProps } from '@types';
 
-import { FeatureCollectionWithProps } from '../../../types';
 import { setFeatureCollectionAtIndexAtom } from '../atoms';
 import type { UseModelResult } from './use-model';
 

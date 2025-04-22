@@ -27,7 +27,7 @@ export const MapView = () => {
   // Use the map interactions hook
   const {
     currentRoadPoints,
-    fitMapToFeatureCollections,
+    fitMapToFeatureCollection,
     handleFeatureHover,
     handleMapClick,
     handleMapRightClick,
@@ -41,7 +41,7 @@ export const MapView = () => {
   } = useMapInteractions(mapInstance);
 
   // Use the map effects hook
-  useMapEffects(mapInstance, fitMapToFeatureCollections, updateLayerIds);
+  useMapEffects(mapInstance, fitMapToFeatureCollection, updateLayerIds);
 
   // Determine cursor style based on hover state
   const cursorStyle =

@@ -11,7 +11,6 @@ import {
   drawModeAtom,
   featureCollectionAtom,
   featureCollectionsAtom,
-  selectedFeatureCollectionAtom,
   selectedFeatureCollectionIndexAtom,
   setFeatureCollectionAtom,
   setSelectedFeatureCollectionIndexAtom
@@ -96,44 +95,6 @@ describe('World Atoms', () => {
       // Test setting to an index above range (should clamp to length-1)
       store.set(setSelectedFeatureCollectionIndexAtom, 5);
       expect(store.get(selectedFeatureCollectionIndexAtom)).toBe(2);
-    });
-  });
-
-  describe('selectedFeatureCollectionAtom', () => {
-    it('should return the selected feature collection', () => {
-      const store = createTestStore();
-      const collections: FeatureCollection[] = [
-        { features: [], type: 'FeatureCollection' },
-        {
-          features: [
-            {
-              geometry: { coordinates: [0, 0], type: 'Point' },
-              properties: {},
-              type: 'Feature'
-            }
-          ],
-          type: 'FeatureCollection'
-        }
-      ];
-
-      store.set(featureCollectionsAtom, collections);
-      store.set(selectedFeatureCollectionIndexAtom, 1);
-
-      const value = store.get(selectedFeatureCollectionAtom);
-      expect(value).toEqual(collections[1]);
-    });
-
-    it('should return null if index is out of bounds', () => {
-      const store = createTestStore();
-      const collections: FeatureCollection[] = [
-        { features: [], type: 'FeatureCollection' }
-      ];
-
-      store.set(featureCollectionsAtom, collections);
-      store.set(selectedFeatureCollectionIndexAtom, 1); // Out of bounds
-
-      const value = store.get(selectedFeatureCollectionAtom);
-      expect(value).toBeNull();
     });
   });
 

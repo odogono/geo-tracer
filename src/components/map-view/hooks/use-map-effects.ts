@@ -1,20 +1,23 @@
 import { useEffect } from 'react';
 
 import { useWorld } from '@contexts/world/use-world';
+import { RouteCollection } from '@types';
 
 export const useMapEffects = (
   mapInstance: maplibregl.Map | null,
-  fitMapToFeatureCollections: () => void,
+  fitMapToFeatureCollection: (
+    featureCollection?: RouteCollection | undefined
+  ) => void,
   updateLayerIds: () => void
 ) => {
-  const { drawMode, featureCollections } = useWorld();
+  const { drawMode, featureCollection, featureCollections } = useWorld();
 
   // Fit map to bounds when drawMode changes
   useEffect(() => {
     if (drawMode === 'none') {
       // fitMapToFeatureCollections();
     }
-  }, [fitMapToFeatureCollections, drawMode]);
+  }, [fitMapToFeatureCollection, drawMode]);
 
   // Fit map to bounds when map instance is loaded
   useEffect(() => {
@@ -23,9 +26,15 @@ export const useMapEffects = (
       featureCollections.length > 0 &&
       featureCollections.some(collection => collection.features.length > 0)
     ) {
-      fitMapToFeatureCollections();
+      // console.debug('fitMapToFeatureCollection', featureCollection);
+      fitMapToFeatureCollection(featureCollection as RouteCollection);
     }
-  }, [mapInstance, fitMapToFeatureCollections, featureCollections]);
+  }, [
+    mapInstance,
+    fitMapToFeatureCollection,
+    featureCollections,
+    featureCollection
+  ]);
 
   // Update layer IDs when feature collections change
   useEffect(() => {

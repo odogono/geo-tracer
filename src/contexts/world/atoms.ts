@@ -60,14 +60,6 @@ export const setSelectedFeatureCollectionIndexAtom = atom(
   }
 );
 
-export const selectedFeatureCollectionAtom = atom<FeatureCollection | null>(
-  get => {
-    const index = get(selectedFeatureCollectionIndexAtom);
-    const featureCollections = get(featureCollectionsAtom);
-    return featureCollections[index] || null;
-  }
-);
-
 export const featureCollectionAtom = atom<FeatureCollection | null>(get => {
   const index = get(selectedFeatureCollectionIndexAtom);
   const featureCollections = get(featureCollectionsAtom);
