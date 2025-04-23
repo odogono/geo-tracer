@@ -48,7 +48,7 @@ const TreeNodeComponent = ({ dragHandle, node, style }: NodeProps) => {
   } = useWorld();
   const [isHovered, setIsHovered] = useState(false);
 
-  const data = node.data;
+  // const data = node.data;
 
   const isFeatureCollection = node.data.type === 'collection';
   const isFeature = node.data.type === 'feature';
@@ -69,10 +69,7 @@ const TreeNodeComponent = ({ dragHandle, node, style }: NodeProps) => {
     icon = <Box />;
   }
 
-  const label =
-    (node.data.data as FeatureCollectionWithProps).properties?.name ||
-    node.data.name;
-  // log.debug('node data', node.data);
+  const label = node.data.name;
 
   const handleDelete = useCallback(
     (e: React.MouseEvent) => {
@@ -226,23 +223,9 @@ export const FeatureTree = () => {
   // Convert feature collections to tree data
   const treeData = useMemo(
     () =>
-      featureCollections.map((collection, index) => {
-        const collectionNode: TreeNode = {
-          children: collection.features.map((feature, featureIndex) => ({
-            data: feature,
-            id: `feature-${index}-${featureIndex}`,
-            index: featureIndex,
-            name: `Feature ${featureIndex + 1} (${feature.geometry.type})`,
-            type: 'feature'
-          })),
-          data: collection,
-          id: `collection-${index}`,
-          index,
-          name: `Collection ${index + 1}`,
-          type: 'collection'
-        };
-        return collectionNode;
-      }),
+      featureCollections.map((collection, index) =>
+        featureCollectionToTreeNode(collection, index)
+      ),
     [featureCollections]
   );
 
@@ -274,4 +257,54 @@ export const FeatureTree = () => {
       </Tree>
     </div>
   );
+};
+
+const getFeatureName = (feature: Feature, featureIndex: number) => {
+  const id = feature?.id ? `(${feature.id})` : '';
+  const name = feature?.properties?.name || `Feature ${featureIndex + 1}`;
+  return `${id}${name} (${feature?.geometry?.type})`;
+};
+
+const featureCollectionToTreeNode = (
+  collection: FeatureCollection,
+  index: number
+) => {
+  const children = collection.features
+    .map((feature, featureIndex) => {
+      if (!feature) {
+        return null;
+      }
+
+      return {
+        data: feature as Feature,
+        featureId: feature?.id ?? featureIndex,
+        id: `feature-${index}-${featureIndex}`,
+        index: featureIndex,
+        name: getFeatureName(feature, featureIndex),
+        type: 'feature'
+      };
+    })
+    .filter(Boolean) as TreeNode[];
+
+  children.sort((a, b) => {
+    if (
+      a.data.geometry.type === 'Point' &&
+      b.data.geometry.type === 'LineString'
+    ) {
+      return -1;
+    }
+
+    return (a.featureId as number) - (b.featureId as number);
+  });
+
+  const collectionNode: TreeNode = {
+    children: children as TreeNode[],
+    data: collection,
+    id: `collection-${index}`,
+    index,
+    name: `Collection ${index + 1}`,
+    type: 'collection'
+  };
+
+  return collectionNode;
 };

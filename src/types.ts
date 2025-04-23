@@ -2,8 +2,12 @@ import { FeatureCollection } from 'geojson';
 
 export type DrawMode = 'road' | 'route' | 'select' | 'none';
 
-export type EdgeFeatureProperties = {
+export type CommonFeatureProperties = {
+  [key: string]: unknown;
   hash: string;
+};
+
+export type EdgeFeatureProperties = CommonFeatureProperties & {
   length: number;
   name?: string | null;
   type: 'edge';

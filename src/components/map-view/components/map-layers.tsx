@@ -76,11 +76,11 @@ export const MapLayers: React.FC<MapLayersProps> = ({
       {featureCollections.map((collection, index) => {
         // Separate LineString and Point features for this collection
         const lineFeatures = collection.features.filter(
-          feature => feature.geometry.type === 'LineString'
+          feature => feature?.geometry?.type === 'LineString'
         );
 
         const pointFeatures = collection.features.filter(
-          feature => feature.geometry.type === 'Point'
+          feature => feature?.geometry?.type === 'Point'
         );
 
         // Create feature collections for lines and points
