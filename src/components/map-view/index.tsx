@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { Map as LibreMap } from 'react-map-gl/maplibre';
 
@@ -11,13 +11,33 @@ import { useWorld } from '@contexts/world/use-world';
 import { createLog } from '@helpers/log';
 
 import { MapLayers } from './components/map-layers';
+import { SelectionMarquee } from './components/selection-marquee';
 
 const log = createLog('MapView');
 
 export const MapView = () => {
   const { theme } = useTheme();
-  const { drawMode, selectedFeatureCollectionIndex } = useWorld();
+  const { drawMode, selectedFeatureCollectionIndex, setDrawMode } = useWorld();
   const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Add keyboard event handler
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Only trigger if 'A' is pressed and no input elements are focused
+      if (
+        e.key.toLowerCase() === 'a' &&
+        document.activeElement?.tagName !== 'INPUT'
+      ) {
+        setDrawMode('select');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [setDrawMode]);
 
   const mapStyle =
     theme === 'dark'
@@ -43,7 +63,16 @@ export const MapView = () => {
   // Use the map effects hook
   useMapEffects(mapInstance, fitMapToFeatureCollection, updateLayerIds);
 
-  // Determine cursor style based on hover state
+  const handleSelectionComplete = (bounds: {
+    end: [number, number];
+    start: [number, number];
+  }) => {
+    // TODO: Handle the selection bounds here
+    log.debug('Selection complete', bounds);
+    setDrawMode('none');
+  };
+
+  // Determine cursor style based on hover state and draw mode
   const cursorStyle =
     drawMode === 'none'
       ? hoveredFeature
@@ -64,13 +93,15 @@ export const MapView = () => {
             }
           })()
         : 'grab'
-      : 'crosshair';
+      : drawMode === 'select'
+        ? 'crosshair'
+        : 'crosshair';
 
   return (
-    <div className="w-screen h-screen">
+    <div className="w-screen h-screen" ref={containerRef}>
       <LibreMap
         cursor={cursorStyle}
-        dragPan={drawMode !== 'route'}
+        dragPan={drawMode === 'none'}
         initialViewState={{
           latitude: 0,
           longitude: 0,
@@ -94,6 +125,11 @@ export const MapView = () => {
           selectedFeatureCollectionIndex={selectedFeatureCollectionIndex}
         />
       </LibreMap>
+      <SelectionMarquee
+        active={drawMode === 'select'}
+        mapContainer={containerRef.current}
+        onSelectionComplete={handleSelectionComplete}
+      />
     </div>
   );
 };
