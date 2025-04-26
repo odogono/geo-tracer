@@ -1,4 +1,4 @@
-import { BBox } from 'geojson';
+import { BBox, Geometry } from 'geojson';
 
 import { CANVAS_MARGIN, latitudeToY, longitudeToX } from './helpers';
 import { FeatureCollectionWithProperties } from './types';
@@ -7,7 +7,7 @@ type RenderFeatureCollectionProps = {
   bbox: BBox;
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  featureCollection: FeatureCollectionWithProperties;
+  featureCollection: FeatureCollectionWithProperties<Geometry>;
 };
 
 export const renderFeatureCollection = ({
@@ -47,6 +47,16 @@ export const renderFeatureCollection = ({
 
   // Draw each feature
   featureCollection.features.forEach(feature => {
+    if (feature.geometry.type === 'Point') {
+      const coords = feature.geometry.coordinates;
+      const x = (longitudeToX(coords[0]) - minX) * scale + offsetX;
+      const y = (latitudeToY(coords[1]) - minY) * scale + offsetY;
+      ctx.strokeStyle = color;
+      ctx.beginPath();
+      ctx.arc(x / dpr, y / dpr, 5, 0, 2 * Math.PI);
+      ctx.stroke();
+    }
+
     if (feature.geometry.type === 'LineString') {
       const coords = feature.geometry.coordinates;
 

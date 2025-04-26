@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { CodeIcon, RouteIcon } from 'lucide-react';
+
 import { renderFeatureCollection } from './canvas';
 import { data as initialData } from './data';
 import { useDimensions } from './hooks/use-dimensions';
@@ -79,12 +81,16 @@ export const FeatureCanvas = ({ scenarioId }: FeatureCanvasProps) => {
   }, [isTextView, dimensions, renderCanvas]);
 
   return (
-    <div className="w-96 h-96 bg-blue-300 relative" ref={containerRef}>
+    <div className="w-128 h-128 bg-blue-300 relative" ref={containerRef}>
       <button
-        className="absolute top-2 right-2 bg-white px-2 py-1 rounded shadow hover:bg-gray-100 z-10"
+        className="absolute top-2 right-2 bg-white text-black px-2 py-1 rounded shadow hover:bg-gray-100 z-10"
         onClick={() => setIsTextView(!isTextView)}
       >
-        {isTextView ? 'Show Canvas' : 'Show JSON'}
+        {isTextView ? (
+          <RouteIcon className="w-4 h-4" />
+        ) : (
+          <CodeIcon className="w-4 h-4" />
+        )}
       </button>
 
       {isTextView ? (

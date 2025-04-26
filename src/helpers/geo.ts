@@ -118,7 +118,7 @@ export const findPointOnNearestFeature = (
   point: GeoJSON.Position,
   features: GeoJSON.FeatureCollection,
   options: FindPointOnNearestFeatureOptions = {}
-) => {
+): NearestFeatureResult[] => {
   const maxDistance = options.maxDistance || 0.005; // 5 metres
   // let nearestPosition: GeoJSON.Position | undefined = undefined;
   let nearestDistance: number | undefined = Infinity;
@@ -153,7 +153,7 @@ export const findPointOnNearestFeature = (
   }
 
   // return result;
-  return nearestRoad ? [[nearestRoad, nearestNode]] : [];
+  return nearestRoad ? [[nearestRoad, nearestNode!]] : [];
 };
 
 type DirectionVector = GeoJSON.Position;

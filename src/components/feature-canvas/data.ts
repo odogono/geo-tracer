@@ -1,12 +1,12 @@
-import { FeatureCollection } from 'geojson';
+import { FeatureCollection, LineString } from 'geojson';
 
 export type Scenario = {
-  gps: FeatureCollection;
+  gps: FeatureCollection<LineString>;
   id: string;
-  roads: FeatureCollection;
+  roads: FeatureCollection<LineString>;
 };
 
-export const gpsWalkData: FeatureCollection = {
+export const gpsWalkData: FeatureCollection<LineString> = {
   features: [
     {
       geometry: {
@@ -28,7 +28,7 @@ export const gpsWalkData: FeatureCollection = {
   type: 'FeatureCollection'
 };
 
-export const scenarioOneData: FeatureCollection = {
+export const scenarioOneData: FeatureCollection<LineString> = {
   features: [
     {
       bbox: [-3.646_106_7, 50.794_328, -3.645_706_7, 50.794_575_7],
