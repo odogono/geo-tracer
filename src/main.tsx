@@ -34,11 +34,3 @@ if (!rootElement.innerHTML) {
     </StrictMode>
   );
 }
-
-// createRoot(document.getElementById('root')!).render(
-//   <StrictMode>
-//     <ThemeProvider>
-//       <Main />
-//     </ThemeProvider>
-//   </StrictMode>
-// );
