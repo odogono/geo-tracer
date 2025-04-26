@@ -39,8 +39,8 @@
       "@hooks/*": [
         "./src/hooks/*"
       ],
-      "@screens/*": [
-        "./src/screens/*"
+      "@routes/*": [
+        "./src/routes/*"
       ],
       "@types": [
         "./src/types"

@@ -8,12 +8,6 @@ import { createFileRoute } from '@tanstack/react-router';
 
 const log = createLog('Main');
 
-const Index = () => (
-  <div className="p-2">
-    <h3>Welcome Home!</h3>
-  </div>
-);
-
 const Main = () => {
   const message = 'Geo Path Tracer';
 
