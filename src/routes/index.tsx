@@ -1,0 +1,36 @@
+import { IconView } from '@components/icon-view';
+import { MapView } from '@components/map-view';
+import { SidePanel } from '@components/side-panel';
+import { ThemeTogglePortal } from '@components/theme/toggle-portal';
+import { WorldProvider } from '@contexts/world/provider';
+import { createLog } from '@helpers/log';
+import { createFileRoute } from '@tanstack/react-router';
+
+const log = createLog('Main');
+
+const Index = () => (
+  <div className="p-2">
+    <h3>Welcome Home!</h3>
+  </div>
+);
+
+const Main = () => {
+  const message = 'Geo Path Tracer';
+
+  log.info(message);
+
+  return (
+    <WorldProvider>
+      <div className="relative w-screen h-screen">
+        <MapView />
+        <IconView />
+        <SidePanel />
+      </div>
+      <ThemeTogglePortal />
+    </WorldProvider>
+  );
+};
+
+export const Route = createFileRoute('/')({
+  component: Main
+});

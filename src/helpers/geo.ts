@@ -170,21 +170,17 @@ export const buildRouteGraph = (entries: NearestFeatureResult[]) => {
   for (let ii = 0; ii < entries.length; ii++) {
     const [road, point] = entries[ii];
 
+    const next = entries.length - 1 > ii ? entries[ii + 1][1] : undefined;
+    const nextPoint = next ? next : undefined;
+    const nextRoad = next ? entries[ii + 1][0] : undefined;
+
     if (lastPoint) {
       direction = getDirectionVector(lastPoint, point);
     } else {
-      const nextPoint = entries[ii + 1][1];
-      direction = getDirectionVector(point, nextPoint);
+      direction = nextPoint ? getDirectionVector(point, nextPoint) : direction;
     }
 
     if (!currentRoad) {
-      currentRoad = road;
-    } else if (currentRoad.properties.hash !== road.properties.hash) {
-      // road change - add a node at the end of this road
-      const endPoint = getRoadEndPoint(currentRoad, point, direction);
-
-      log.debug('[buildRouteGraph] endPoint', endPoint.properties.hash);
-      // result.push(endPoint);
       currentRoad = road;
     }
 
@@ -199,7 +195,22 @@ export const buildRouteGraph = (entries: NearestFeatureResult[]) => {
       road.properties.hash
     );
 
+    result.push(point);
+
     lastPoint = point;
+
+    if (nextRoad && nextRoad.properties.hash !== currentRoad.properties.hash) {
+      // road change - add a node at the end of this road
+      const endPoint = getRoadEndPoint(currentRoad, point, direction);
+
+      log.debug('[buildRouteGraph] endPoint', endPoint.properties.hash);
+      result.push(endPoint);
+      lastPoint = endPoint;
+    }
+
+    if (result.length > 5) {
+      break;
+    }
   }
 
   return result;

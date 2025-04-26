@@ -4,7 +4,7 @@ import nkzw from '@nkzw/eslint-config';
 
 export default [
   {
-    ignores: ['**/dist/*']
+    ignores: ['**/dist/*', 'src/routeTree.gen.ts']
   },
   ...nkzw,
   {

@@ -1,17 +1,44 @@
 import { StrictMode } from 'react';
 
-import { createRoot } from 'react-dom/client';
+// Create a new router instance
+import ReactDOM from 'react-dom/client';
+
+import { RouterProvider, createRouter } from '@tanstack/react-router';
+
+// Import the generated route tree
+import { routeTree } from './routeTree.gen';
 
 import './index.css';
 
 import { ThemeProvider } from '@contexts/theme/provider.tsx';
 
-import Main from './screens/main.tsx';
+// Create a new router instance
+const router = createRouter({ routeTree });
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ThemeProvider>
-      <Main />
-    </ThemeProvider>
-  </StrictMode>
-);
+// Register the router instance for type safety
+declare module '@tanstack/react-router' {
+  type RouterRegister = {
+    router: typeof router;
+  };
+}
+
+// Render the app
+const rootElement = document.getElementById('root')!;
+if (!rootElement.innerHTML) {
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(
+    <StrictMode>
+      <ThemeProvider>
+        <RouterProvider router={router} />
+      </ThemeProvider>
+    </StrictMode>
+  );
+}
+
+// createRoot(document.getElementById('root')!).render(
+//   <StrictMode>
+//     <ThemeProvider>
+//       <Main />
+//     </ThemeProvider>
+//   </StrictMode>
+// );

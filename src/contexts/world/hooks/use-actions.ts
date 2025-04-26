@@ -169,7 +169,11 @@ export const useActions = ({ featureCollections }: UseActionsProps) => {
     // computedCollection.features.push(startPoint?.[1]);
     // computedCollection.features.push(endPoint?.[1]);
 
-    buildRouteGraph(nearestFeatures);
+    const routeGraph = buildRouteGraph(nearestFeatures);
+
+    for (const point of routeGraph) {
+      // computedCollection.features.push(point);
+    }
 
     // for (const [feature, point] of nearestFeatures) {
     //   // computedCollection.features.push(point);
