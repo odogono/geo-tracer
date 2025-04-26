@@ -32,7 +32,7 @@ export const MapLayers: React.FC<MapLayersProps> = ({
   selectedFeatureCollectionIndex
 }) => {
   const { theme } = useTheme();
-  const { drawMode, featureCollections, highlightedFeature } = useWorld();
+  const { drawMode, featureCollections, selectedFeatures } = useWorld();
 
   // Create preview line for road drawing
   const previewLine =
@@ -105,8 +105,18 @@ export const MapLayers: React.FC<MapLayersProps> = ({
               <Layer
                 id={`roads-${index}`}
                 paint={{
-                  'line-color': collectionColor,
-                  'line-width': 3
+                  'line-color': [
+                    'case',
+                    ['get', 'selected'],
+                    '#00ff00', // Selected color
+                    collectionColor // Default color
+                  ],
+                  'line-width': [
+                    'case',
+                    ['get', 'selected'],
+                    5, // Selected width
+                    3 // Default width
+                  ]
                 }}
                 type="line"
               />
@@ -118,9 +128,24 @@ export const MapLayers: React.FC<MapLayersProps> = ({
                 id={`points-${index}`}
                 paint={{
                   'circle-color': theme === 'dark' ? '#ffffff' : '#000000',
-                  'circle-radius': 6,
-                  'circle-stroke-color': collectionColor,
-                  'circle-stroke-width': 2
+                  'circle-radius': [
+                    'case',
+                    ['get', 'selected'],
+                    8, // Selected radius
+                    6 // Default radius
+                  ],
+                  'circle-stroke-color': [
+                    'case',
+                    ['get', 'selected'],
+                    '#00ff00', // Selected color
+                    collectionColor // Default color
+                  ],
+                  'circle-stroke-width': [
+                    'case',
+                    ['get', 'selected'],
+                    3, // Selected stroke width
+                    2 // Default stroke width
+                  ]
                 }}
                 type="circle"
               />
@@ -130,15 +155,15 @@ export const MapLayers: React.FC<MapLayersProps> = ({
       })}
 
       {/* Render highlighted feature */}
-      {highlightedFeature && (
+      {selectedFeatures.length > 0 && (
         <Source
           data={{
-            features: [highlightedFeature],
+            features: selectedFeatures,
             type: 'FeatureCollection'
           }}
           type="geojson"
         >
-          {isLineStringFeature(highlightedFeature) ? (
+          {selectedFeatures.every(feature => isLineStringFeature(feature)) ? (
             <Layer
               id="highlighted-feature-line"
               layout={{
@@ -151,7 +176,7 @@ export const MapLayers: React.FC<MapLayersProps> = ({
               }}
               type="line"
             />
-          ) : isPointFeature(highlightedFeature) ? (
+          ) : selectedFeatures.every(feature => isPointFeature(feature)) ? (
             <Layer
               id="highlighted-feature-point"
               paint={{

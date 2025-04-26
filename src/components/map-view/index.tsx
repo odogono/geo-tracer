@@ -23,9 +23,11 @@ export const MapView = () => {
     drawMode,
     featureCollections,
     selectedFeatureCollectionIndex,
+    selectedFeatures,
     setDrawMode,
     setFeatureCollections,
-    setHighlightedFeature
+    setHighlightedFeature,
+    setSelectedFeatures
   } = useWorld();
   const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -98,22 +100,15 @@ export const MapView = () => {
       return;
     }
 
-    log.debug('Selection polygon', selectionPolygon);
-
     // Find features that intersect with the selection box
-    const selectedFeatures = currentCollection.features.filter(feature => {
+    const newSelectedFeatures = currentCollection.features.filter(feature => {
       if (feature.properties?.type === 'cycle') {
         return false;
       }
-      if (feature.properties?.reversed) {
-        return false;
-      }
 
-      // log.debug('checking', feature.properties?.name);
       try {
         return booleanIntersects(feature, selectionPolygon);
       } catch (error) {
-        log.debug('Feature', feature);
         log.error('Error checking intersection:', error);
         return false;
       }
@@ -121,15 +116,18 @@ export const MapView = () => {
 
     log.debug('Selection complete', {
       bounds,
-      selectedFeatures
+      selectedFeatures: newSelectedFeatures.length
     });
+
+    // Update selected features
+    setSelectedFeatures(newSelectedFeatures);
 
     // Update the feature collection to mark selected features
     const updatedFeatures = currentCollection.features.map(feature => ({
       ...feature,
       properties: {
         ...feature.properties,
-        selected: selectedFeatures.includes(feature)
+        selected: newSelectedFeatures.includes(feature)
       }
     }));
 
@@ -143,10 +141,12 @@ export const MapView = () => {
     newFeatureCollections[selectedFeatureCollectionIndex] = updatedCollection;
     setFeatureCollections(newFeatureCollections);
 
-    // Highlight the last selected feature if any were selected
-    const lastSelectedFeature = selectedFeatures.at(-1);
-    if (lastSelectedFeature) {
-      setHighlightedFeature(lastSelectedFeature);
+    // Highlight all selected features
+    if (newSelectedFeatures.length > 0) {
+      const lastSelectedFeature = newSelectedFeatures.at(-1);
+      if (lastSelectedFeature) {
+        setHighlightedFeature(lastSelectedFeature);
+      }
     }
 
     setDrawMode('none');

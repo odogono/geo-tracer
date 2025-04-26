@@ -1,4 +1,4 @@
-import { FeatureCollection } from 'geojson';
+import { Feature, FeatureCollection } from 'geojson';
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 
@@ -115,3 +115,6 @@ export const currentRoadPointsAtom = atom<GeoJSON.Position[] | null>(null);
 
 // Current edge being drawn
 export const currentEdgeAtom = atom<EdgeFeature | null>(null);
+
+// Track selected features
+export const selectedFeaturesAtom = atom<Feature[]>([]);

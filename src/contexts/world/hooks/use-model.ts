@@ -9,6 +9,7 @@ import {
   featureCollectionAtom,
   featureCollectionsAtom,
   selectedFeatureCollectionIndexAtom,
+  selectedFeaturesAtom,
   setFeatureCollectionAtom,
   setSelectedFeatureCollectionIndexAtom
 } from '../atoms';
@@ -17,15 +18,14 @@ export type UseModelResult = ReturnType<typeof useModel>;
 
 export const useModel = () => {
   const [drawMode, setDrawMode] = useState<DrawMode>('none');
-
   const [highlightedFeature, setHighlightedFeature] = useState<Feature | null>(
     null
   );
+  const [selectedFeatures, setSelectedFeatures] = useAtom(selectedFeaturesAtom);
 
   const [featureCollections, setFeatureCollections] = useAtom(
     featureCollectionsAtom
   );
-
   const featureCollection = useAtomValue(featureCollectionAtom);
   const setFeatureCollection = useSetAtom(setFeatureCollectionAtom);
 
@@ -42,10 +42,12 @@ export const useModel = () => {
     featureCollections,
     highlightedFeature,
     selectedFeatureCollectionIndex,
+    selectedFeatures,
     setDrawMode,
     setFeatureCollection,
     setFeatureCollections,
     setHighlightedFeature,
-    setSelectedFeatureCollectionIndex
+    setSelectedFeatureCollectionIndex,
+    setSelectedFeatures
   };
 };
