@@ -1,5 +1,66 @@
 import { FeatureCollection } from 'geojson';
 
+export type Scenario = {
+  gps: FeatureCollection;
+  id: string;
+  roads: FeatureCollection;
+};
+
+export const gpsWalkData: FeatureCollection = {
+  features: [
+    {
+      geometry: {
+        coordinates: [
+          [-3.646_077_394_005_715, 50.794_510_981_765_6],
+          [-3.645_902_241_256_692_4, 50.794_502_354_647_39],
+          [-3.645_861_296_459_003, 50.794_469_284_013_39],
+          [-3.645_818_076_949_467_5, 50.794_362_882_683_004],
+          [-3.645_736_187_352_184_7, 50.794_374_385_541_6]
+        ],
+        type: 'LineString'
+      },
+      properties: {
+        type: 'route'
+      },
+      type: 'Feature'
+    }
+  ],
+  type: 'FeatureCollection'
+};
+
+export const scenarioOneData: FeatureCollection = {
+  features: [
+    {
+      bbox: [-3.646_106_7, 50.794_328, -3.645_706_7, 50.794_575_7],
+      geometry: {
+        coordinates: [
+          [-3.646_106_7, 50.794_575_7],
+          [-3.645_706_7, 50.794_328]
+        ],
+        type: 'LineString'
+      },
+      id: '71',
+      properties: {
+        hash: 'gcj2vnbgz.gcj2vnc62',
+        highway: 'footway',
+        length: 39.358_070_231_087_16,
+        name: null,
+        oneway: false,
+        osmid: 176_300_525,
+        reversed: false,
+        selected: false,
+        service: null,
+        street_count: null,
+        type: 'edge',
+        x: null,
+        y: null
+      },
+      type: 'Feature'
+    }
+  ],
+  type: 'FeatureCollection'
+};
+
 export const data: FeatureCollection = {
   features: [
     {
@@ -223,3 +284,11 @@ export const data: FeatureCollection = {
   ],
   type: 'FeatureCollection'
 };
+
+export const scenarios: Scenario[] = [
+  {
+    gps: gpsWalkData,
+    id: 'scenario-one',
+    roads: scenarioOneData
+  }
+];

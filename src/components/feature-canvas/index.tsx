@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { FeatureCollection } from 'geojson';
-
 import { renderFeatureCollection } from './canvas';
 import { data as initialData } from './data';
+import { useDimensions } from './hooks/use-dimensions';
+import { useScenario } from './hooks/use-scenario';
 
 export type FeatureCanvasProps = {
-  id: string;
+  scenarioId: string;
 };
 
-export const FeatureCanvas = ({ id }: FeatureCanvasProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+export const FeatureCanvas = ({ scenarioId }: FeatureCanvasProps) => {
+  const { containerRef, dimensions } = useDimensions();
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isTextView, setIsTextView] = useState(false);
   const [featureData, setFeatureData] = useState(initialData);
@@ -18,34 +19,9 @@ export const FeatureCanvas = ({ id }: FeatureCanvasProps) => {
     JSON.stringify(initialData, null, 2)
   );
   const [error, setError] = useState<string | null>(null);
-  const [dimensions, setDimensions] = useState({ height: 0, width: 0 });
 
-  // Update canvas dimensions when container size changes
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) {
-      return;
-    }
-
-    const updateDimensions = () => {
-      const rect = container.getBoundingClientRect();
-      // Use device pixel ratio for better rendering on high DPI displays
-      const scale = window.devicePixelRatio || 1;
-      setDimensions({
-        height: Math.floor(rect.height * scale),
-        width: Math.floor(rect.width * scale)
-      });
-    };
-
-    // Initial size
-    updateDimensions();
-
-    // Watch for size changes
-    const resizeObserver = new ResizeObserver(updateDimensions);
-    resizeObserver.observe(container);
-
-    return () => resizeObserver.disconnect();
-  }, []);
+  const { bbox: scenarioBbox, featureCollections: scenarioFeatureCollections } =
+    useScenario(scenarioId);
 
   // Handle text changes and validate JSON
   const handleTextChange = (text: string) => {
@@ -67,15 +43,33 @@ export const FeatureCanvas = ({ id }: FeatureCanvasProps) => {
   // Render canvas effect
   const renderCanvas = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !featureData?.features?.length) {
+    if (!canvas || !scenarioFeatureCollections?.length) {
       return;
     }
 
-    renderFeatureCollection({
-      canvas,
-      featureCollection: featureData as unknown as FeatureCollection
-    });
-  }, [featureData]);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return;
+    }
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (const featureCollection of scenarioFeatureCollections) {
+      renderFeatureCollection({
+        bbox: scenarioBbox,
+        canvas,
+        ctx,
+        featureCollection
+      });
+    }
+
+    // renderFeatureCollection({
+    //   bbox: scenarioBbox,
+    //   canvas,
+    //   featureCollection: featureData as unknown as FeatureCollection
+    // });
+  }, [scenarioFeatureCollections, scenarioBbox]);
 
   // Call renderCanvas whenever dimensions, featureData changes or view toggles
   useEffect(() => {

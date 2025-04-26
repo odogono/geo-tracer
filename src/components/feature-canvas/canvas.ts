@@ -1,43 +1,28 @@
-import { FeatureCollection } from 'geojson';
+import { BBox } from 'geojson';
 
 import { CANVAS_MARGIN, latitudeToY, longitudeToX } from './helpers';
+import { FeatureCollectionWithProperties } from './types';
 
 type RenderFeatureCollectionProps = {
+  bbox: BBox;
   canvas: HTMLCanvasElement;
-  featureCollection: FeatureCollection;
+  ctx: CanvasRenderingContext2D;
+  featureCollection: FeatureCollectionWithProperties;
 };
 
 export const renderFeatureCollection = ({
+  bbox,
   canvas,
+  ctx,
   featureCollection
 }: RenderFeatureCollectionProps) => {
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return;
-  }
-
-  // Clear canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   // Calculate bounds of all features
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
+  const minX = longitudeToX(bbox[0]);
+  const minY = latitudeToY(bbox[1]);
+  const maxX = longitudeToX(bbox[2]);
+  const maxY = latitudeToY(bbox[3]);
 
-  // First pass: calculate bounds in projected coordinates
-  featureCollection.features.forEach(feature => {
-    if (feature.geometry.type === 'LineString') {
-      feature.geometry.coordinates.forEach(([lon, lat]) => {
-        const x = longitudeToX(lon);
-        const y = latitudeToY(lat);
-        minX = Math.min(minX, x);
-        minY = Math.min(minY, y);
-        maxX = Math.max(maxX, x);
-        maxY = Math.max(maxY, y);
-      });
-    }
-  });
+  const { color } = featureCollection.properties;
 
   // Calculate scale to fit features within canvas while maintaining aspect ratio
   const dataWidth = maxX - minX;
@@ -67,7 +52,7 @@ export const renderFeatureCollection = ({
 
       ctx.beginPath();
       // ctx.strokeStyle = feature.properties?.selected ? '#00ff00' : '#000000';
-      ctx.strokeStyle = '#000000';
+      ctx.strokeStyle = color;
       ctx.lineWidth = 2;
 
       // Move to first point
