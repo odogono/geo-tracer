@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+import { booleanIntersects, envelope, lineString } from '@turf/turf';
 import { Map as LibreMap } from 'react-map-gl/maplibre';
 
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -9,6 +10,7 @@ import { useMapInteractions } from '@/components/map-view/hooks/use-map-interact
 import { useTheme } from '@contexts/theme/context';
 import { useWorld } from '@contexts/world/use-world';
 import { createLog } from '@helpers/log';
+import { FeatureCollectionWithProps } from '@types';
 
 import { MapLayers } from './components/map-layers';
 import { SelectionMarquee } from './components/selection-marquee';
@@ -17,7 +19,14 @@ const log = createLog('MapView');
 
 export const MapView = () => {
   const { theme } = useTheme();
-  const { drawMode, selectedFeatureCollectionIndex, setDrawMode } = useWorld();
+  const {
+    drawMode,
+    featureCollections,
+    selectedFeatureCollectionIndex,
+    setDrawMode,
+    setFeatureCollections,
+    setHighlightedFeature
+  } = useWorld();
   const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -67,8 +76,79 @@ export const MapView = () => {
     end: [number, number];
     start: [number, number];
   }) => {
-    // TODO: Handle the selection bounds here
-    log.debug('Selection complete', bounds);
+    if (!mapInstance) {
+      return;
+    }
+
+    // Convert screen coordinates to map coordinates
+    const sw = mapInstance.unproject(bounds.start);
+    const ne = mapInstance.unproject(bounds.end);
+
+    // Create a line from diagonal points and convert to envelope
+    const diagonal = lineString([
+      [sw.lng, sw.lat],
+      [ne.lng, ne.lat]
+    ]);
+    const selectionPolygon = envelope(diagonal);
+
+    // Get the current feature collection
+    const currentCollection =
+      featureCollections[selectedFeatureCollectionIndex];
+    if (!currentCollection) {
+      return;
+    }
+
+    log.debug('Selection polygon', selectionPolygon);
+
+    // Find features that intersect with the selection box
+    const selectedFeatures = currentCollection.features.filter(feature => {
+      if (feature.properties?.type === 'cycle') {
+        return false;
+      }
+      if (feature.properties?.reversed) {
+        return false;
+      }
+
+      // log.debug('checking', feature.properties?.name);
+      try {
+        return booleanIntersects(feature, selectionPolygon);
+      } catch (error) {
+        log.debug('Feature', feature);
+        log.error('Error checking intersection:', error);
+        return false;
+      }
+    });
+
+    log.debug('Selection complete', {
+      bounds,
+      selectedFeatures
+    });
+
+    // Update the feature collection to mark selected features
+    const updatedFeatures = currentCollection.features.map(feature => ({
+      ...feature,
+      properties: {
+        ...feature.properties,
+        selected: selectedFeatures.includes(feature)
+      }
+    }));
+
+    const updatedCollection: FeatureCollectionWithProps = {
+      ...currentCollection,
+      features: updatedFeatures
+    };
+
+    // Update the feature collections
+    const newFeatureCollections = [...featureCollections];
+    newFeatureCollections[selectedFeatureCollectionIndex] = updatedCollection;
+    setFeatureCollections(newFeatureCollections);
+
+    // Highlight the last selected feature if any were selected
+    const lastSelectedFeature = selectedFeatures.at(-1);
+    if (lastSelectedFeature) {
+      setHighlightedFeature(lastSelectedFeature);
+    }
+
     setDrawMode('none');
   };
 

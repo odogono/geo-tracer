@@ -432,13 +432,22 @@ export const useMapInteractions = (mapInstance: maplibregl.Map | null) => {
   // Function to handle feature hover
   const handleFeatureHover = useCallback(
     (e: maplibregl.MapMouseEvent) => {
-      if (!mapInstance || drawMode !== 'none' || layerIds.length === 0) {
+      if (!mapInstance || drawMode !== 'none') {
+        return;
+      }
+
+      // Get base layer IDs (roads and points)
+      const baseLayerIds = layerIds.filter(
+        id => id.startsWith('roads-') || id.startsWith('points-')
+      );
+
+      if (baseLayerIds.length === 0) {
         return;
       }
 
       // Check if we're hovering over any feature
       const features = mapInstance.queryRenderedFeatures(e.point, {
-        layers: layerIds
+        layers: baseLayerIds
       });
 
       if (features.length > 0) {
@@ -447,39 +456,24 @@ export const useMapInteractions = (mapInstance: maplibregl.Map | null) => {
         log.debug('Hovering over feature:', feature);
         setHoveredFeature(feature);
       } else {
-        // Not hovering over any feature
         setHoveredFeature(null);
       }
     },
     [mapInstance, drawMode, layerIds]
   );
 
-  // Update layer IDs when feature collections change
+  // Update layer IDs whenever feature collections change
   const updateLayerIds = useCallback(() => {
-    if (!mapInstance) {
-      return;
-    }
+    const ids: string[] = [];
 
-    // Get all existing layer IDs
-    const existingLayerIds = featureCollections.map(
-      (_, index) => `roads-${index}`
-    );
+    // Add base layer IDs
+    featureCollections.forEach((_, index) => {
+      ids.push(`roads-${index}`);
+      ids.push(`points-${index}`);
+    });
 
-    // Add highlighted feature layers if they exist
-    if (mapInstance.getLayer('highlighted-feature-line')) {
-      existingLayerIds.push('highlighted-feature-line');
-    }
-    if (mapInstance.getLayer('highlighted-feature-point')) {
-      existingLayerIds.push('highlighted-feature-point');
-    }
-
-    // Add preview layer if it exists
-    if (mapInstance.getLayer('preview')) {
-      existingLayerIds.push('preview');
-    }
-
-    setLayerIds(existingLayerIds);
-  }, [mapInstance, featureCollections]);
+    setLayerIds(ids);
+  }, [featureCollections]);
 
   return {
     currentRoadPoints,
