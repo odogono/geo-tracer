@@ -81,7 +81,7 @@ export const FeatureCanvas = ({ scenarioId }: FeatureCanvasProps) => {
   }, [isTextView, dimensions, renderCanvas]);
 
   return (
-    <div className="w-128 h-128 bg-blue-300 relative" ref={containerRef}>
+    <div className="w-128 h-128 bg-slate-400 relative" ref={containerRef}>
       <button
         className="absolute top-2 right-2 bg-white text-black px-2 py-1 rounded shadow hover:bg-gray-100 z-10"
         onClick={() => setIsTextView(!isTextView)}

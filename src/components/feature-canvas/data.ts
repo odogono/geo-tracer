@@ -61,6 +61,66 @@ export const scenarioOneData: FeatureCollection<LineString> = {
   type: 'FeatureCollection'
 };
 
+export const gpsWalkAlongSingleLineStringWithVariations: FeatureCollection<LineString> =
+  {
+    features: [
+      {
+        geometry: {
+          coordinates: [
+            [-3.647_047_916_134_624_8, 50.794_765_188_022_61],
+            [-3.646_859_570_581_682_4, 50.794_787_767_080_55],
+            [-3.646_624_679_861_872_7, 50.794_782_293_370_53],
+            [-3.646_541_331_543_005_5, 50.794_762_451_166_35]
+          ],
+          type: 'LineString'
+        },
+        properties: {
+          type: 'route'
+        },
+        type: 'Feature'
+      }
+    ],
+    type: 'FeatureCollection'
+  };
+
+export const singleLineStringWithVariations: FeatureCollection<LineString> = {
+  features: [
+    {
+      bbox: [-3.647_211_5, 50.794_694, -3.646_380_4, 50.794_801_7],
+      geometry: {
+        coordinates: [
+          [-3.646_380_4, 50.794_694],
+          [-3.646_498_8, 50.794_764_5],
+          [-3.646_581_2, 50.794_799_2],
+          [-3.646_678_9, 50.794_801_7],
+          [-3.646_808_9, 50.794_787_4],
+          [-3.646_937_6, 50.794_772_8],
+          [-3.647_211_5, 50.794_788]
+        ],
+        type: 'LineString'
+      },
+      id: '35',
+      properties: {
+        hash: 'gcj2vnbu9.gcj2vnbjj',
+        highway: 'residential',
+        length: 63.055_002_948_254_75,
+        name: 'Beech Park',
+        oneway: false,
+        osmid: 29_406_930,
+        reversed: false,
+        selected: false,
+        service: null,
+        street_count: null,
+        type: 'edge',
+        x: null,
+        y: null
+      },
+      type: 'Feature'
+    }
+  ],
+  type: 'FeatureCollection'
+};
+
 export const data: FeatureCollection = {
   features: [
     {
@@ -290,5 +350,10 @@ export const scenarios: Scenario[] = [
     gps: gpsWalkData,
     id: 'scenario-one',
     roads: scenarioOneData
+  },
+  {
+    gps: gpsWalkAlongSingleLineStringWithVariations,
+    id: 'scenario-two',
+    roads: singleLineStringWithVariations
   }
 ];

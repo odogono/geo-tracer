@@ -156,63 +156,111 @@ export const findPointOnNearestFeature = (
   return nearestRoad ? [[nearestRoad, nearestNode!]] : [];
 };
 
+export type RoadPoints = {
+  points: Feature<Point>[];
+  road: Feature<LineString>;
+};
+
+export type RoadHash = string;
+
+export type RoadPointsMap = Record<RoadHash, RoadPoints>;
+
 type DirectionVector = GeoJSON.Position;
 
-export const buildRouteGraph = (entries: NearestFeatureResult[]) => {
+export const buildRouteGraph = (roadPointsMap: RoadPointsMap) => {
   const result: Node[] = [];
   // direction vector
-  let direction: DirectionVector = [0, 0];
+  // const direction: DirectionVector = [0, 0];
 
-  let currentRoad: Road | undefined = undefined;
-  let lastPoint: Node | undefined = undefined;
+  // const currentRoad: Road | undefined = undefined;
+  // const lastPoint: Node | undefined = undefined;
 
-  // for (const [road, point] of entries) {
-  for (let ii = 0; ii < entries.length; ii++) {
-    const [road, point] = entries[ii];
+  log.debug('roadPointsMap', roadPointsMap);
 
-    const next = entries.length - 1 > ii ? entries[ii + 1][1] : undefined;
-    const nextPoint = next ? next : undefined;
-    const nextRoad = next ? entries[ii + 1][0] : undefined;
+  for (const [roadHash, roadPoints] of Object.entries(roadPointsMap)) {
+    const { points, road } = roadPoints;
 
-    if (lastPoint) {
-      direction = getDirectionVector(lastPoint, point);
-    } else {
-      direction = nextPoint ? getDirectionVector(point, nextPoint) : direction;
+    const coords = road.geometry.coordinates;
+    let hasRouteStarted = false;
+    let isRoadReversed = false;
+    let lastPointAdded = false;
+    // const pointIndex = 0;
+
+    const roadRoute: (Position | number)[] = [];
+
+    log.debug('road', { points, road, roadHash }, coords.length);
+    for (let ii = 0; ii < coords.length; ii++) {
+      const roadA: Position = coords[ii];
+      const roadB: Position = coords[ii + 1];
+
+      if (!roadA || !roadB) {
+        // log.debug('no roadA or roadB', ii);
+        continue;
+      }
+
+      const pointsOnSegment = findPointsOnSegment(roadA, roadB, points);
+      // log.debug(
+      //   'road segment',
+      //   ii,
+      //   ii + 1,
+      //   { hasRouteStarted },
+      //   pointsOnSegment
+      // );
+
+      if (!hasRouteStarted) {
+        if (pointsOnSegment.length === 0) {
+          continue;
+        }
+
+        if (pointsOnSegment[0] !== 0) {
+          isRoadReversed = true;
+        }
+
+        hasRouteStarted = true;
+      }
+
+      for (const pointIndex of pointsOnSegment) {
+        roadRoute.push(pointIndex);
+        lastPointAdded = isRoadReversed
+          ? pointIndex === 0
+          : pointIndex === pointsOnSegment.length - 1;
+      }
+
+      if (!lastPointAdded) {
+        roadRoute.push(roadB);
+      }
     }
 
-    if (!currentRoad) {
-      currentRoad = road;
+    if (isRoadReversed) {
+      roadRoute.reverse();
     }
 
-    // else {
-    //   result.push(point);
-    // }
-
-    log.debug(
-      '[buildRouteGraph] point',
-      point.properties.hash,
-      road.id,
-      road.properties.hash
-    );
-
-    result.push(point);
-
-    lastPoint = point;
-
-    if (nextRoad && nextRoad.properties.hash !== currentRoad.properties.hash) {
-      // road change - add a node at the end of this road
-      const endPoint = getRoadEndPoint(currentRoad, point, direction);
-
-      log.debug('[buildRouteGraph] endPoint', endPoint.properties.hash);
-      result.push(endPoint);
-      lastPoint = endPoint;
+    for (const item of roadRoute) {
+      if (typeof item === 'number') {
+        result.push(toNode(points[item].geometry.coordinates));
+      } else {
+        result.push(toNode(item));
+      }
     }
 
-    if (result.length > 5) {
-      break;
-    }
+    log.debug('road route result', roadRoute);
   }
 
+  return result;
+};
+
+const findPointsOnSegment = (
+  roadA: Position,
+  roadB: Position,
+  points: Feature<Point>[]
+) => {
+  const result: number[] = [];
+  for (let ii = 0; ii < points.length; ii++) {
+    const point = points[ii];
+    if (isPointOnSegment(roadA, roadB, point.geometry.coordinates)) {
+      result.push(ii);
+    }
+  }
   return result;
 };
 
@@ -308,4 +356,79 @@ const getRoadEndPoint = (
 
   // Return the end point that has a higher dot product (better alignment)
   return dotEnd > dotStart ? toNode(endPoint) : toNode(startPoint);
+};
+
+export const isPointOnLineString = (
+  point: GeoJSON.Position,
+  line: GeoJSON.LineString
+) => {
+  const start = line.coordinates[0];
+  const end = line.coordinates.at(-1);
+
+  if (!start || !end) {
+    return false;
+  }
+
+  // Check if point lies on line segment
+  const d1 = distancePointToPoint(point, start);
+  const d2 = distancePointToPoint(point, end);
+  const lineLen = distancePointToPoint(start, end);
+
+  // Allow for small floating point errors
+  const tolerance = 0.0001;
+  return Math.abs(d1 + d2 - lineLen) < tolerance;
+};
+
+export const distancePointToPoint = (
+  a: GeoJSON.Position,
+  b: GeoJSON.Position
+): number => {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
+export const distanceBetweenPoints = (
+  p1: GeoJSON.Position,
+  p2: GeoJSON.Position
+): number => Math.sqrt(Math.pow(p2[0] - p1[0], 2) + Math.pow(p2[1] - p1[1], 2));
+
+export const isPointOnSegment = (
+  start: GeoJSON.Position,
+  end: GeoJSON.Position,
+  point: GeoJSON.Position
+) => {
+  const tolerance = 0.000_01;
+
+  const d1 = distanceBetweenPoints(start, point);
+  const d2 = distanceBetweenPoints(point, end);
+  const length = distanceBetweenPoints(start, end);
+
+  return Math.abs(d1 + d2 - length) < tolerance;
+};
+
+export const arePointsEqual = (p1: GeoJSON.Position, p2: GeoJSON.Position) => {
+  const d = distanceBetweenPoints(p1, p2);
+  return d < 0.000_01;
+};
+
+export const measureDistanceAlongLine = (
+  linestring: GeoJSON.LineString,
+  point: GeoJSON.Position
+): number => {
+  let totalDistance = 0;
+
+  for (let i = 0; i < linestring.coordinates.length - 1; i++) {
+    const start = linestring.coordinates[i];
+    const end = linestring.coordinates[i + 1];
+
+    // If point is on this segment, calculate partial distance
+    if (isPointOnSegment(start, end, point)) {
+      return totalDistance + distanceBetweenPoints(start, point);
+    }
+
+    totalDistance += distanceBetweenPoints(start, end);
+  }
+
+  return totalDistance;
 };

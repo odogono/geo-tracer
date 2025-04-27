@@ -60,6 +60,10 @@ export const renderFeatureCollection = ({
     if (feature.geometry.type === 'LineString') {
       const coords = feature.geometry.coordinates;
 
+      if (coords.length < 2) {
+        return;
+      }
+
       ctx.beginPath();
       // ctx.strokeStyle = feature.properties?.selected ? '#00ff00' : '#000000';
       ctx.strokeStyle = color;
