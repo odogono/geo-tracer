@@ -22,7 +22,7 @@ export const renderFeatureCollection = ({
   const maxX = longitudeToX(bbox[2]);
   const maxY = latitudeToY(bbox[3]);
 
-  const { color } = featureCollection.properties;
+  const { color, strokeWidth = 2 } = featureCollection.properties;
 
   // Calculate scale to fit features within canvas while maintaining aspect ratio
   const dataWidth = maxX - minX;
@@ -67,7 +67,7 @@ export const renderFeatureCollection = ({
       ctx.beginPath();
       // ctx.strokeStyle = feature.properties?.selected ? '#00ff00' : '#000000';
       ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = strokeWidth;
 
       // Move to first point
       const [startLon, startLat] = coords[0];

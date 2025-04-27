@@ -220,7 +220,10 @@ export const buildRouteGraph = (roadPointsMap: RoadPointsMap) => {
       }
 
       for (const pointIndex of pointsOnSegment) {
-        roadRoute.push(pointIndex);
+        // only add the first and last point of the route
+        if (pointIndex === 0 || pointIndex === points.length - 1) {
+          roadRoute.push(pointIndex);
+        }
         lastPointAdded = isRoadReversed
           ? pointIndex === 0
           : pointIndex === pointsOnSegment.length - 1;
