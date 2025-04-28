@@ -29,7 +29,8 @@ export const useScenario = (scenarioId: string) => {
     ...roads,
     bbox: turfBbox(roads),
     properties: {
-      color: '#000'
+      color: '#000',
+      showIndexes: true
     }
   };
 
@@ -37,7 +38,8 @@ export const useScenario = (scenarioId: string) => {
     ...gps,
     bbox: turfBbox(gps),
     properties: {
-      color: '#00ff00'
+      color: '#00ff00',
+      showIndexes: true
     }
   };
 
@@ -67,6 +69,7 @@ const createRoute = (roadPointsMap: RoadPointsMap) => {
     features: [],
     properties: {
       color: '#F2F',
+      showIndexes: true,
       strokeWidth: 4
     },
     type: 'FeatureCollection'

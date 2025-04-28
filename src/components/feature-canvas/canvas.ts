@@ -22,7 +22,7 @@ export const renderFeatureCollection = ({
   const maxX = longitudeToX(bbox[2]);
   const maxY = latitudeToY(bbox[3]);
 
-  const { color, strokeWidth = 2 } = featureCollection.properties;
+  const { color, showIndexes, strokeWidth = 2 } = featureCollection.properties;
 
   // Calculate scale to fit features within canvas while maintaining aspect ratio
   const dataWidth = maxX - minX;
@@ -75,12 +75,29 @@ export const renderFeatureCollection = ({
       const y1 = (latitudeToY(startLat) - minY) * scale + offsetY;
       ctx.moveTo(x1 / dpr, y1 / dpr);
 
+      if (showIndexes) {
+        ctx.font = '12px Arial';
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText('0', x1 / dpr, y1 / dpr - 10);
+      }
+
       // Draw lines to subsequent points
       for (let i = 1; i < coords.length; i++) {
         const [lon, lat] = coords[i];
         const x2 = (longitudeToX(lon) - minX) * scale + offsetX;
         const y2 = (latitudeToY(lat) - minY) * scale + offsetY;
         ctx.lineTo(x2 / dpr, y2 / dpr);
+
+        // Render index number if showIndexes is true
+        if (showIndexes) {
+          // ctx.font = '12px Arial';
+          // ctx.fillStyle = color;
+          // ctx.textAlign = 'center';
+          // ctx.textBaseline = 'bottom';
+          ctx.fillText(i.toString(), x2 / dpr, y2 / dpr - 10);
+        }
       }
 
       ctx.stroke();
