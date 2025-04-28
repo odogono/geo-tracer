@@ -121,6 +121,90 @@ export const singleLineStringWithVariations: FeatureCollection<LineString> = {
   type: 'FeatureCollection'
 };
 
+const gpsWalkAlongTwoLineStrings: FeatureCollection<LineString> = {
+  features: [
+    {
+      geometry: {
+        coordinates: [
+          [-3.647_923_598_279_59, 50.794_874_299_570_89],
+          [-3.647_868_238_595_72, 50.794_821_245_970_525],
+          [-3.647_818_236_300_509, 50.794_800_927_554_49],
+          [-3.647_530_723_101_624_5, 50.794_811_086_763_84]
+        ],
+        type: 'LineString'
+      },
+      properties: {
+        type: 'route'
+      },
+      type: 'Feature'
+    }
+  ],
+  type: 'FeatureCollection'
+};
+
+export const twoLineStrings: FeatureCollection<LineString> = {
+  features: [
+    {
+      bbox: [-3.647_872_4, 50.794_749_3, -3.647_211_5, 50.794_798_7],
+      geometry: {
+        coordinates: [
+          [-3.647_211_5, 50.794_788],
+          [-3.647_515_1, 50.794_798_7],
+          [-3.647_685_5, 50.794_787_4],
+          [-3.647_872_4, 50.794_749_3]
+        ],
+        type: 'LineString'
+      },
+      id: '42',
+      properties: {
+        hash: 'gcj2vnbjj.gcj2uyzsy',
+        highway: 'residential',
+        length: 47.217_396_755_816_274,
+        name: 'Beech Park',
+        oneway: false,
+        osmid: 29_406_930,
+        reversed: false,
+        selected: true,
+        service: null,
+        street_count: null,
+        type: 'edge',
+        x: null,
+        y: null
+      },
+      type: 'Feature'
+    },
+    {
+      bbox: [-3.648_025, 50.794_749_3, -3.647_872_4, 50.794_913],
+      geometry: {
+        coordinates: [
+          [-3.648_025, 50.794_913],
+          [-3.647_933_4, 50.794_851_7],
+          [-3.647_872_4, 50.794_749_3]
+        ],
+        type: 'LineString'
+      },
+      id: '88',
+      properties: {
+        hash: 'gcj2uyztf.gcj2uyzsy',
+        highway: 'residential',
+        length: 21.542_981_725_282_807,
+        name: 'Beech Park',
+        oneway: false,
+        osmid: 176_758_347,
+        reversed: false,
+        selected: true,
+        service: null,
+        street_count: null,
+        type: 'edge',
+        x: null,
+        y: null
+      },
+      type: 'Feature'
+    }
+  ],
+  type: 'FeatureCollection'
+};
+
 export const data: FeatureCollection = {
   features: [
     {
@@ -355,5 +439,10 @@ export const scenarios: Scenario[] = [
     gps: gpsWalkAlongSingleLineStringWithVariations,
     id: 'scenario-two',
     roads: singleLineStringWithVariations
+  },
+  {
+    gps: gpsWalkAlongTwoLineStrings,
+    id: 'scenario-three',
+    roads: twoLineStrings
   }
 ];
