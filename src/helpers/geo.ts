@@ -176,6 +176,10 @@ export const buildRouteGraph = (roadPointsMap: RoadPointsMap) => {
   // const lastPoint: Node | undefined = undefined;
 
   log.debug('roadPointsMap', roadPointsMap);
+  const totalGpsPoints = Object.values(roadPointsMap).reduce(
+    (acc, roadPoints) => acc + roadPoints.points.length,
+    0
+  );
 
   for (const [roadHash, roadPoints] of Object.entries(roadPointsMap)) {
     const { points, road } = roadPoints;
@@ -184,7 +188,6 @@ export const buildRouteGraph = (roadPointsMap: RoadPointsMap) => {
     let hasRouteStarted = false;
     let isRoadReversed = false;
     let lastPointAdded = false;
-    // const pointIndex = 0;
 
     const roadRoute: (Position | number)[] = [];
 
@@ -197,6 +200,8 @@ export const buildRouteGraph = (roadPointsMap: RoadPointsMap) => {
         // log.debug('no roadA or roadB', ii);
         continue;
       }
+
+      log.debug('road segment', roadA, roadB);
 
       const pointsOnSegment = findPointsOnSegment(roadA, roadB, points);
       // log.debug(
@@ -223,15 +228,19 @@ export const buildRouteGraph = (roadPointsMap: RoadPointsMap) => {
         // only add the first and last point of the route
         if (pointIndex === 0 || pointIndex === points.length - 1) {
           roadRoute.push(pointIndex);
+          log.debug('adding route point', pointIndex);
         }
         lastPointAdded = isRoadReversed
           ? pointIndex === 0
-          : pointIndex === pointsOnSegment.length - 1;
+          : pointIndex === points.length - 1;
       }
 
-      if (!lastPointAdded) {
-        roadRoute.push(roadB);
-      }
+      // if (!lastPointAdded) {
+      log.debug('adding road', roadB);
+      roadRoute.push(roadB);
+      // } else {
+      //   log.debug('lastPointAdded', lastPointAdded, { isRoadReversed });
+      // }
     }
 
     if (isRoadReversed) {
@@ -247,7 +256,10 @@ export const buildRouteGraph = (roadPointsMap: RoadPointsMap) => {
     }
 
     log.debug('road route result', roadRoute);
+    // return result;
   }
+
+  // TODO remove duplicate nodes
 
   return result;
 };
