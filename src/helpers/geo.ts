@@ -1,10 +1,10 @@
 import { nearestPointOnLine } from '@turf/nearest-point-on-line';
 import { BBox, Feature, LineString, Point, Polygon, Position } from 'geojson';
 
-import { createLog } from '@helpers/log';
-
 import { CommonFeatureProperties } from '../types';
+import { GraphNode, addGraphEdge, createGraph, createGraphNode } from './astar';
 import { createPointFeatureHash } from './hash';
+import { createLog } from './log';
 
 const log = createLog('geo');
 
@@ -167,6 +167,84 @@ export type RoadPointsMap = Record<RoadHash, RoadPoints>;
 
 type DirectionVector = GeoJSON.Position;
 
+export const buildSearchRouteGraph = (roadPointsMap: RoadPointsMap) => {
+  const graph = createGraph();
+
+  let hasRouteStarted = false;
+  let isLastPointAdded = false;
+
+  for (const [_roadHash, roadPoints] of Object.entries(roadPointsMap)) {
+    const { points, road } = roadPoints;
+    const roadCoords = road.geometry.coordinates;
+
+    let isRoadReversed = false;
+
+    for (let ii = 0; ii < roadCoords.length; ii++) {
+      const roadA = roadCoords[ii];
+      const roadB = roadCoords[ii + 1];
+
+      log.debug('🎉 road segment', roadA, roadB);
+
+      if (!roadB) {
+        // last point of road
+        continue;
+      }
+
+      let currentNode: GraphNode | undefined = undefined;
+
+      if (hasRouteStarted) {
+        // add the start point of the road to the graph
+        currentNode = createGraphNode(graph, roadA);
+      }
+
+      // returns indexes of the gps points that are on this road segment
+      const pointsOnSegment = findPointsOnSegment(roadA, roadB, points);
+
+      log.debug('points on segment', pointsOnSegment);
+
+      if (!hasRouteStarted) {
+        if (pointsOnSegment.length === 0) {
+          // if there are no gps points on this segment, skip it
+          continue;
+        }
+        if (pointsOnSegment[0] !== 0) {
+          // if the first point is not the start point of the road, reverse the road
+          isRoadReversed = true;
+        }
+
+        hasRouteStarted = true;
+      }
+
+      for (const pointIndex of pointsOnSegment) {
+        // add the gps point to the graph
+        const gpsNode = createGraphNode(
+          graph,
+          points[pointIndex].geometry.coordinates
+        );
+        log.debug('added gps node', gpsNode.point);
+
+        if (currentNode) {
+          log.debug('adding edge', currentNode.point, gpsNode.point);
+          addGraphEdge(graph, currentNode, gpsNode, 1);
+        }
+        currentNode = gpsNode;
+
+        isLastPointAdded = isRoadReversed
+          ? pointIndex === 0
+          : pointIndex === points.length - 1;
+      }
+
+      if (!isLastPointAdded && currentNode) {
+        const endNode = createGraphNode(graph, roadB);
+        log.debug('adding edge', currentNode.point, endNode.point);
+        addGraphEdge(graph, currentNode, endNode, 1);
+      }
+    }
+  }
+
+  return graph;
+};
+
 export const buildRouteGraph = (roadPointsMap: RoadPointsMap) => {
   const result: Node[] = [];
   // direction vector
@@ -201,16 +279,9 @@ export const buildRouteGraph = (roadPointsMap: RoadPointsMap) => {
         continue;
       }
 
-      log.debug('road segment', roadA, roadB);
+      // log.debug('road segment', roadA, roadB);
 
       const pointsOnSegment = findPointsOnSegment(roadA, roadB, points);
-      // log.debug(
-      //   'road segment',
-      //   ii,
-      //   ii + 1,
-      //   { hasRouteStarted },
-      //   pointsOnSegment
-      // );
 
       if (!hasRouteStarted) {
         if (pointsOnSegment.length === 0) {
@@ -238,8 +309,6 @@ export const buildRouteGraph = (roadPointsMap: RoadPointsMap) => {
       // if (!lastPointAdded) {
       log.debug('adding road', roadB);
       roadRoute.push(roadB);
-      // } else {
-      //   log.debug('lastPointAdded', lastPointAdded, { isRoadReversed });
       // }
     }
 

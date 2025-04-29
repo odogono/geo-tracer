@@ -21,6 +21,12 @@ export type Graph = {
   nodes: GraphNode[];
 };
 
+export const createGraph = (): Graph => ({
+  edges: [],
+  nodeMap: new Map<string, GraphNode>(),
+  nodes: []
+});
+
 export const createGraphNode = (
   graph: Graph,
   point: GeoJSON.Position,
@@ -59,7 +65,7 @@ export const addGraphEdge = (
   );
 
   if (exists) {
-    return;
+    return graph;
   }
 
   graph.edges.push({
@@ -68,6 +74,8 @@ export const addGraphEdge = (
     to,
     weight
   });
+
+  return graph;
 };
 
 const distancePointToPoint = (
