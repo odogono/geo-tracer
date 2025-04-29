@@ -68,7 +68,7 @@ const createRoute = (roadPointsMap: RoadPointsMap) => {
   const result: FeatureCollectionWithProperties<LineString> = {
     features: [],
     properties: {
-      color: '#F2F',
+      color: '#F0F',
       showIndexes: true,
       strokeWidth: 4
     },

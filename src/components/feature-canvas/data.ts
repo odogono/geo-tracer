@@ -429,6 +429,96 @@ export const data: FeatureCollection = {
   type: 'FeatureCollection'
 };
 
+export const gpsWalkThreeRoadJunction: FeatureCollection<LineString> = {
+  features: [
+    {
+      geometry: {
+        coordinates: [
+          [-3.648_817_697_269_919_3, 50.794_611_028_238_31],
+          [-3.648_561_226_260_682, 50.794_635_795_936_586],
+          [-3.648_530_354_751_244_4, 50.794_626_789_502_67],
+          [-3.648_517_293_727_366, 50.794_520_963_770_68],
+          [-3.648_550_539_969_619_4, 50.794_454_916_384_325]
+        ],
+        type: 'LineString'
+      },
+      properties: {
+        type: 'route'
+      },
+      type: 'Feature'
+    }
+  ],
+  type: 'FeatureCollection'
+};
+
+export const threeRoadJunction: FeatureCollection<LineString> = {
+  features: [
+    {
+      geometry: {
+        coordinates: [
+          [-3.648_286_4, 50.794_642_6],
+          [-3.648_551_6, 50.794_623_1]
+        ],
+        type: 'LineString'
+      },
+      id: '45',
+      properties: {
+        hash: 'gcj2uyzsy.gcj2uyzhn',
+        highway: 'residential',
+        name: 'Beech Park',
+        oneway: false,
+        osmid: 29_406_930,
+        type: 'edge'
+      },
+      type: 'Feature'
+    },
+    {
+      bbox: [-3.648_834_9, 50.794_596, -3.648_551_6, 50.794_623_1],
+      geometry: {
+        coordinates: [
+          [-3.648_551_6, 50.794_623_1],
+          [-3.648_697_2, 50.794_603],
+          [-3.648_834_9, 50.794_596]
+        ],
+        type: 'LineString'
+      },
+      id: '57',
+      properties: {
+        hash: 'gcj2uyzhn.gcj2uyygz',
+        highway: 'residential',
+        length: 20.184_678_544_716_178,
+        name: 'Beech Park',
+        oneway: false,
+        osmid: 29_406_930,
+        type: 'edge'
+      },
+      type: 'Feature'
+    },
+    {
+      geometry: {
+        coordinates: [
+          [-3.648_551_6, 50.794_623_1],
+          [-3.648_541_7, 50.794_535_5],
+          [-3.648_567_1, 50.794_451_4]
+        ],
+        type: 'LineString'
+      },
+      id: '59',
+      properties: {
+        hash: 'gcj2uyzhn.gcj2uyz40',
+        highway: 'residential',
+        length: 44.124_482_020_728_7,
+        name: 'Walnut Drive',
+        oneway: false,
+        osmid: 29_406_981,
+        type: 'edge'
+      },
+      type: 'Feature'
+    }
+  ],
+  type: 'FeatureCollection'
+};
+
 export const scenarios: Scenario[] = [
   {
     gps: gpsWalkData,
@@ -444,5 +534,10 @@ export const scenarios: Scenario[] = [
     gps: gpsWalkAlongTwoLineStrings,
     id: 'scenario-three',
     roads: twoLineStrings
+  },
+  {
+    gps: gpsWalkThreeRoadJunction,
+    id: 'scenario-four',
+    roads: threeRoadJunction
   }
 ];
