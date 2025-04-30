@@ -112,6 +112,8 @@ const toNode = (coordinates: GeoJSON.Position): Node => {
   return node as Node;
 };
 
+export const getNodeCoordinates = (node: Node) => node.geometry.coordinates;
+
 export type NearestFeatureResult = [Road, Node];
 
 export const findPointOnNearestFeature = (
@@ -173,6 +175,11 @@ export const buildSearchRouteGraph = (roadPointsMap: RoadPointsMap) => {
   let hasRouteStarted = false;
   let isLastPointAdded = false;
 
+  const totalGpsPoints = Object.values(roadPointsMap).reduce(
+    (acc, roadPoints) => acc + roadPoints.points.length,
+    0
+  );
+
   for (const [_roadHash, roadPoints] of Object.entries(roadPointsMap)) {
     const { points, road } = roadPoints;
     const roadCoords = road.geometry.coordinates;
@@ -183,12 +190,11 @@ export const buildSearchRouteGraph = (roadPointsMap: RoadPointsMap) => {
       const roadA = roadCoords[ii];
       const roadB = roadCoords[ii + 1];
 
-      log.debug('🎉 road segment', roadA, roadB);
-
       if (!roadB) {
         // last point of road
         continue;
       }
+      log.debug('🎉 road segment', roadA, '->', roadB);
 
       let currentNode: GraphNode | undefined = undefined;
 
@@ -219,24 +225,30 @@ export const buildSearchRouteGraph = (roadPointsMap: RoadPointsMap) => {
         // add the gps point to the graph
         const gpsNode = createGraphNode(
           graph,
-          points[pointIndex].geometry.coordinates
+          points[pointIndex].geometry.coordinates,
+          true
         );
-        log.debug('added gps node', gpsNode.point);
+        log.debug('added gps node', gpsNode.point, !!currentNode);
 
         if (currentNode) {
-          log.debug('adding edge', currentNode.point, gpsNode.point);
+          log.debug('A adding edge', currentNode.point, gpsNode.point);
           addGraphEdge(graph, currentNode, gpsNode, 1);
         }
         currentNode = gpsNode;
 
         isLastPointAdded = isRoadReversed
           ? pointIndex === 0
-          : pointIndex === points.length - 1;
+          : pointIndex === totalGpsPoints - 1;
       }
+
+      log.debug('finished road segment', {
+        isLastPointAdded,
+        points: totalGpsPoints
+      });
 
       if (!isLastPointAdded && currentNode) {
         const endNode = createGraphNode(graph, roadB);
-        log.debug('adding edge', currentNode.point, endNode.point);
+        log.debug('B adding edge', currentNode.point, endNode.point);
         addGraphEdge(graph, currentNode, endNode, 1);
       }
     }

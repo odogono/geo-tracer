@@ -6,11 +6,12 @@ import { Feature, FeatureCollection, LineString, Point } from 'geojson';
 import {
   NearestFeatureResult,
   RoadPointsMap,
-  buildRouteGraph,
+  buildSearchRouteGraph,
   findPointOnNearestFeature
 } from '@helpers/geo';
 import { createLog } from '@helpers/log';
 
+import { createGraphNode, graphSearch } from '../../../helpers/astar';
 import { scenarios } from '../data';
 import { bboxSum } from '../helpers';
 import { FeatureCollectionWithProperties } from '../types';
@@ -49,12 +50,9 @@ export const useScenario = (scenarioId: string) => {
 
   const [nodes, route] = useMemo(() => {
     // map the gps points on to the roads
-    const { nodes, nodesAndRoads, roadPointsMap } = mapLineString(
-      gpsFC,
-      roadsFC
-    );
+    const { nodes, roadPointsMap } = mapLineString(gpsFC, roadsFC);
 
-    return [nodes, createRoute(roadPointsMap)];
+    return [nodes, createRoute(roadPointsMap, nodes)];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bboxString, scenarioId]);
 
@@ -64,7 +62,10 @@ export const useScenario = (scenarioId: string) => {
   };
 };
 
-const createRoute = (roadPointsMap: RoadPointsMap) => {
+const createRoute = (
+  roadPointsMap: RoadPointsMap,
+  nodes: FeatureCollectionWithProperties<Point>
+) => {
   const result: FeatureCollectionWithProperties<LineString> = {
     features: [],
     properties: {
@@ -79,13 +80,36 @@ const createRoute = (roadPointsMap: RoadPointsMap) => {
     return result;
   }
 
+  log.debug('roadPointsMap nodes', nodes);
+  const startNode = nodes.features.at(0);
+  const endNode = nodes.features.at(-1);
+
+  if (!startNode || !endNode) {
+    return result;
+  }
+
+  // log.debug('roadPointsMap', roadPointsMap);
+
   // Get the ordered nodes that form our route, including road transition points
-  const routeNodes = buildRouteGraph(roadPointsMap);
+  const graph = buildSearchRouteGraph(roadPointsMap);
+  const start = createGraphNode(graph, startNode.geometry.coordinates, true);
+  const end = createGraphNode(graph, endNode.geometry.coordinates, true);
+
+  const path = graphSearch(graph, start, end);
+
+  // log.debug('path', path);
+
+  const pathCoordinates = path.map(node => node.point);
+
+  // const path = graphSearch(graph, start, end);
+
+  // const routeNodes = buildRouteGraph(roadPointsMap);
 
   // Create a single LineString feature from all the points
   const routeFeature: Feature<LineString> = {
     geometry: {
-      coordinates: routeNodes.map(node => node.geometry.coordinates),
+      coordinates: pathCoordinates,
+      // coordinates: routeNodes.map(node => node.geometry.coordinates),
       type: 'LineString'
     },
     properties: {},
