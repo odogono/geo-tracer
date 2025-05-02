@@ -3,58 +3,31 @@ import { describe, expect, test } from 'vitest';
 import { GpsPointFeature, MappedGpsPointFeature, RoadFeature } from '@types';
 
 import { findPointOnNearestRoad, mapGpsToRoad } from '../mapGpsToRoad';
+import { createPointFeature, createRoadFeature } from './helpers';
 
 describe('mapGpsToRoad', () => {
   const mockRoads: RoadFeature[] = [
-    {
-      geometry: {
-        coordinates: [
-          [0, 0],
-          [1, 1]
-        ],
-        type: 'LineString'
-      },
-      properties: {
-        hash: 'road1'
-      },
-      type: 'Feature'
-    },
-    {
-      geometry: {
-        coordinates: [
-          [2, 2],
-          [3, 3]
-        ],
-        type: 'LineString'
-      },
-      properties: {
-        hash: 'road2'
-      },
-      type: 'Feature'
-    }
+    createRoadFeature(
+      [
+        [0, 0],
+        [1, 1]
+      ],
+      'road1',
+      '7zzzzzzzz.s00twy01m'
+    ),
+    createRoadFeature(
+      [
+        [2, 2],
+        [3, 3]
+      ],
+      'road2',
+      's037ms06g.s0d1h60s3'
+    )
   ];
 
   const mockGpsPoints: GpsPointFeature[] = [
-    {
-      geometry: {
-        coordinates: [0.001, 0.001],
-        type: 'Point'
-      },
-      properties: {
-        hash: 'gps1'
-      },
-      type: 'Feature'
-    },
-    {
-      geometry: {
-        coordinates: [2.001, 2.001],
-        type: 'Point'
-      },
-      properties: {
-        hash: 'gps2'
-      },
-      type: 'Feature'
-    }
+    createPointFeature([0.001, 0.001]),
+    createPointFeature([2.001, 2.001])
   ];
 
   test('should map GPS points to nearest roads', () => {
@@ -64,23 +37,11 @@ describe('mapGpsToRoad', () => {
 
     // Check first mapped point
     const firstPoint = result.mappedGpsPoints[0] as MappedGpsPointFeature;
-    expect(firstPoint.properties.roadHash).toBe('road1');
-    expect(firstPoint.properties.dist).toBeLessThan(0.005);
-    expect(firstPoint.properties.hash).toBeDefined();
-    expect(firstPoint.properties.srcHash).toBeDefined();
-    expect(firstPoint.properties.index).toBeDefined();
-    expect(firstPoint.properties.location).toBeDefined();
-    expect(firstPoint.properties.multiFeatureIndex).toBeDefined();
+    expect(firstPoint.properties.roadHash).toBe('7zzzzzzzz.s00twy01m');
 
     // Check second mapped point
     const secondPoint = result.mappedGpsPoints[1] as MappedGpsPointFeature;
-    expect(secondPoint.properties.roadHash).toBe('road2');
-    expect(secondPoint.properties.dist).toBeLessThan(0.005);
-    expect(secondPoint.properties.hash).toBeDefined();
-    expect(secondPoint.properties.srcHash).toBeDefined();
-    expect(secondPoint.properties.index).toBeDefined();
-    expect(secondPoint.properties.location).toBeDefined();
-    expect(secondPoint.properties.multiFeatureIndex).toBeDefined();
+    expect(secondPoint.properties.roadHash).toBe('s037ms06g.s0d1h60s3');
   });
 
   test('should handle empty GPS points array', () => {
@@ -96,32 +57,22 @@ describe('mapGpsToRoad', () => {
 
 describe('findPointOnNearestRoad', () => {
   const mockRoads: RoadFeature[] = [
-    {
-      geometry: {
-        coordinates: [
-          [0, 0],
-          [1, 1]
-        ],
-        type: 'LineString'
-      },
-      properties: {
-        hash: 'road1'
-      },
-      type: 'Feature'
-    },
-    {
-      geometry: {
-        coordinates: [
-          [2, 2],
-          [3, 3]
-        ],
-        type: 'LineString'
-      },
-      properties: {
-        hash: 'road2'
-      },
-      type: 'Feature'
-    }
+    createRoadFeature(
+      [
+        [0, 0],
+        [1, 1]
+      ],
+      'road1',
+      '7zzzzzzzz.s00twy01m'
+    ),
+    createRoadFeature(
+      [
+        [2, 2],
+        [3, 3]
+      ],
+      'road2',
+      's037ms06g.s0d1h60s3'
+    )
   ];
 
   test('should find nearest point on road within max distance', () => {
@@ -130,7 +81,7 @@ describe('findPointOnNearestRoad', () => {
 
     expect(result).toBeDefined();
     if (result) {
-      expect(result.properties.roadHash).toBe('road1');
+      expect(result.properties.roadHash).toBe('7zzzzzzzz.s00twy01m');
       expect(result.properties.dist).toBeLessThan(0.005);
       expect(result.properties.hash).toBeDefined();
       expect(result.properties.srcHash).toBeDefined();

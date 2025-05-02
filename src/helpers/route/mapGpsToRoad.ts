@@ -10,6 +10,10 @@ import {
 
 import { createPointFeatureHash, createPointHash } from '../hash';
 
+type MapGpsToRoadOptions = {
+  maxDistance?: number;
+};
+
 /**
  * Maps gps points onto the nearest roads
  *
@@ -17,14 +21,19 @@ import { createPointFeatureHash, createPointHash } from '../hash';
  * @param roads
  * @returns
  */
-export const mapGpsToRoad = (roads: RoadFeature[], gps: GpsPointFeature[]) => {
+export const mapGpsToRoad = (
+  roads: RoadFeature[],
+  gps: GpsPointFeature[],
+  options: MapGpsToRoadOptions = { maxDistance: 0.005 }
+) => {
   const mappedGpsPoints: GpsPointFeature[] = [];
 
   for (const gpsPoint of gps) {
     // for (const coordinate of feature.geometry) {
     const nearest = findPointOnNearestRoad(
       roads,
-      gpsPoint.geometry.coordinates
+      gpsPoint.geometry.coordinates,
+      options
     );
 
     if (!nearest) {
@@ -49,7 +58,7 @@ type NearestPointProperties = CommonFeatureProperties & {
 export const findPointOnNearestRoad = (
   roads: RoadFeature[],
   point: GeoJSON.Position,
-  options: { maxDistance: number } = { maxDistance: 0.005 }
+  options: MapGpsToRoadOptions = { maxDistance: 0.005 }
 ): MappedGpsPointFeature | undefined => {
   const maxDistance = options.maxDistance || 0.005; // 5 metres
 

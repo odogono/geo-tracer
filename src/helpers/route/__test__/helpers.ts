@@ -1,0 +1,42 @@
+import { GpsPointFeature, RoadFeature } from '@types';
+
+import { GraphEdge, GraphNode } from '../../astar';
+import { getRoadFeatureBBox } from '../../geo';
+import { createEdgeFeatureHash, createPointHash } from '../../hash';
+
+export const createRoadFeature = (
+  coordinates: GeoJSON.Position[],
+  id: string = 'road1',
+  hash: string | undefined = undefined
+): RoadFeature => {
+  const feature: RoadFeature = {
+    geometry: {
+      coordinates,
+      type: 'LineString'
+    },
+    properties: { hash: '', id },
+    type: 'Feature'
+  };
+
+  feature.properties!.hash = hash ?? createEdgeFeatureHash(feature);
+  feature.bbox = feature.bbox ?? getRoadFeatureBBox(feature);
+
+  return feature;
+};
+
+export const createPointFeature = (
+  coordinates: GeoJSON.Position
+): GpsPointFeature => ({
+  geometry: {
+    coordinates,
+    type: 'Point'
+  },
+  properties: { hash: createPointHash(coordinates) },
+  type: 'Feature'
+});
+
+export const edgeToString = (edge: GraphEdge) =>
+  `${edge.from.point[0]},${edge.from.point[1]} -> ${edge.to.point[0]},${edge.to.point[1]}`;
+
+export const nodeToString = (node: GraphNode) =>
+  `${node.point[0]},${node.point[1]}`;
