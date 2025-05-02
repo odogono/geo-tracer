@@ -1,10 +1,30 @@
 import { nearestPointOnLine } from '@turf/nearest-point-on-line';
-import { BBox, Feature, LineString, Point, Polygon, Position } from 'geojson';
+import {
+  BBox,
+  Feature,
+  GeoJsonProperties,
+  LineString,
+  Point,
+  Polygon,
+  Position
+} from 'geojson';
 
-import { CommonFeatureProperties } from '../types';
-import { GraphNode, addGraphEdge, createGraph, createGraphNode } from './astar';
+import {
+  CommonFeatureProperties,
+  DirectionVector,
+  GpsPointFeature,
+  RoadFeature,
+  RoadPointsMap
+} from '@types';
+
 import { createPointFeatureHash } from './hash';
 import { createLog } from './log';
+import {
+  GraphNode,
+  addGraphEdge,
+  createGraph,
+  createGraphNode
+} from './route/astar';
 
 const log = createLog('geo');
 
@@ -29,6 +49,36 @@ export const bboxToFeature = (bbox: BBox): Feature => {
     properties: {},
     type: 'Feature'
   };
+};
+
+export const getRoadFeatureBBox = (feature: RoadFeature): BBox => {
+  const coordinates = feature.geometry.coordinates;
+  const minX = Math.min(...coordinates.map(coord => coord[0]));
+  const minY = Math.min(...coordinates.map(coord => coord[1]));
+  const maxX = Math.max(...coordinates.map(coord => coord[0]));
+  const maxY = Math.max(...coordinates.map(coord => coord[1]));
+  return [minX, minY, maxX, maxY];
+};
+
+/**
+ * Checks if a point is within a bounding box
+ * @param bbox The bounding box to check against
+ * @param point The point to check
+ * @returns True if the point is within the bounding box, false otherwise
+ */
+export const isPointInBBox = (bbox: BBox, point: Position) => {
+  const [minX, minY, maxX, maxY] = bbox;
+  const [x, y] = point;
+  return x >= minX && x <= maxX && y >= minY && y <= maxY;
+};
+
+export const isPointFeatureWithinRoadFeature = (
+  road: RoadFeature,
+  point: GpsPointFeature
+) => {
+  const bbox = road.bbox ?? getRoadFeatureBBox(road);
+  const pointCoords = point.geometry.coordinates;
+  return isPointInBBox(bbox, pointCoords);
 };
 
 export const calculateDistance = (coordinates: Position[]) => {
@@ -158,17 +208,6 @@ export const findPointOnNearestFeature = (
   return nearestRoad ? [[nearestRoad, nearestNode!]] : [];
 };
 
-export type RoadPoints = {
-  points: Feature<Point>[];
-  road: Feature<LineString>;
-};
-
-export type RoadHash = string;
-
-export type RoadPointsMap = Record<RoadHash, RoadPoints>;
-
-type DirectionVector = GeoJSON.Position;
-
 export const buildSearchRouteGraph = (roadPointsMap: RoadPointsMap) => {
   const graph = createGraph();
 
@@ -252,6 +291,52 @@ export const buildSearchRouteGraph = (roadPointsMap: RoadPointsMap) => {
         addGraphEdge(graph, currentNode, endNode, 1);
       }
     }
+  }
+
+  return graph;
+};
+
+export const buildRouteGraphFromRoadsAndPoints = (
+  roads: Feature<LineString, GeoJsonProperties>[],
+  points: Feature<Point, GeoJsonProperties>[]
+) => {
+  const graph = createGraph();
+
+  // First, find which road each point belongs to
+  const pointsWithRoads = points
+    .map(point => {
+      const pointCoords = point.geometry.coordinates;
+      for (const road of roads) {
+        if (isPointOnLineString(pointCoords, road.geometry)) {
+          return { point, road };
+        }
+      }
+      return null;
+    })
+    .filter(Boolean) as { point: Feature<Point>; road: Feature<LineString> }[];
+
+  log.debug(
+    'pointsWithRoads',
+    pointsWithRoads.map(
+      ({ point, road }) =>
+        `${point.geometry.coordinates}, ${road.properties?.id}`
+    )
+  );
+
+  // Create nodes for all points
+  // const nodes = new Map<string, GraphNode>();
+  for (const { point } of pointsWithRoads) {
+    createGraphNode(graph, point.geometry.coordinates, true);
+  }
+
+  // Create nodes for road endpoints
+  for (const road of roads) {
+    const coords = road.geometry.coordinates;
+    const start = coords[0];
+    const end = coords.at(-1);
+
+    createGraphNode(graph, start);
+    createGraphNode(graph, end!);
   }
 
   return graph;

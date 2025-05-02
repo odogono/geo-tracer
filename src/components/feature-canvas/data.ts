@@ -519,6 +519,126 @@ export const threeRoadJunction: FeatureCollection<LineString> = {
   type: 'FeatureCollection'
 };
 
+export const gpsBoxRoads: FeatureCollection<LineString> = {
+  features: [
+    {
+      geometry: {
+        coordinates: [
+          [-3.645_340_245_710_173, 50.794_847_915_476],
+          [-3.645_433_173_736_506_7, 50.794_903_391_836_584],
+          [-3.645_491_253_753_675_7, 50.794_905_023_493_64],
+          [-3.645_708_085_815_215_3, 50.794_780_201_593_34],
+          [-3.645_726_155_153_852_2, 50.794_719_830_096_824],
+          [-3.645_602_251_117_935_6, 50.794_608_876_873_58],
+          [-3.645_442_208_406_223, 50.794_551_768_494_1],
+          [-3.645_398_325_726_546_3, 50.794_550_136_825_22],
+          [-3.645_265_387_022_419_6, 50.794_605_613_539_26],
+          [-3.645_231_829_679_005_4, 50.794_649_668_530_3],
+          [-3.645_166_005_660_229_3, 50.794_692_091_815_85],
+          [-3.645_159_552_325_168_3, 50.794_732_883_399_945],
+          [-3.645_190_528_333_955_6, 50.794_763_069_149_724]
+        ],
+        type: 'LineString'
+      },
+      properties: {
+        type: 'route'
+      },
+      type: 'Feature'
+    }
+  ],
+  type: 'FeatureCollection'
+};
+
+export const boxRoads: FeatureCollection<LineString> = {
+  features: [
+    {
+      bbox: [-3.645_764_5, 50.794_520_8, -3.645_408_4, 50.794_737_2],
+      geometry: {
+        coordinates: [
+          [-3.645_408_4, 50.794_520_8],
+          [-3.645_764_5, 50.794_737_2]
+        ],
+        type: 'LineString'
+      },
+      id: '76',
+      properties: {
+        hash: 'gcj2vnc7x.gcj2vnchz',
+        highway: 'footway',
+        length: 34.719_789_202_371_615,
+        name: null,
+        oneway: false,
+        osmid: 176_300_538,
+        type: 'edge'
+      },
+      type: 'Feature'
+    },
+    {
+      bbox: [-3.645_408_4, 50.794_520_8, -3.645_096_9, 50.794_713_5],
+      geometry: {
+        coordinates: [
+          [-3.645_408_4, 50.794_520_8],
+          [-3.645_096_9, 50.794_713_5]
+        ],
+        type: 'LineString'
+      },
+      id: '74',
+      properties: {
+        hash: 'gcj2vnc7x.gcj2vncsx',
+        highway: 'footway',
+        length: 30.634_764_899_601_49,
+        name: null,
+        oneway: false,
+        osmid: 176_300_531,
+        type: 'edge'
+      },
+      type: 'Feature'
+    },
+    {
+      bbox: [-3.645_764_5, 50.794_737_2, -3.645_450_7, 50.794_934_2],
+      geometry: {
+        coordinates: [
+          [-3.645_450_7, 50.794_934_2],
+          [-3.645_764_5, 50.794_737_2]
+        ],
+        type: 'LineString'
+      },
+      id: '85',
+      properties: {
+        hash: 'gcj2vncmy.gcj2vnchz',
+        highway: 'footway',
+        length: 31.085_499_751_293_852,
+        name: null,
+        oneway: false,
+        osmid: 176_300_518,
+        type: 'edge'
+      },
+      type: 'Feature'
+    },
+    {
+      bbox: [-3.645_450_7, 50.794_713_5, -3.645_096_9, 50.794_934_2],
+      geometry: {
+        coordinates: [
+          [-3.645_450_7, 50.794_934_2],
+          [-3.645_096_9, 50.794_713_5]
+        ],
+        type: 'LineString'
+      },
+      id: '86',
+      properties: {
+        hash: 'gcj2vncmy.gcj2vncsx',
+        highway: 'footway',
+        length: 34.937_537_688_013_52,
+        name: null,
+        oneway: false,
+        osmid: 176_300_530,
+        type: 'edge'
+      },
+      type: 'Feature'
+    }
+  ],
+  type: 'FeatureCollection'
+};
+
 export const scenarios: Scenario[] = [
   {
     gps: gpsWalkData,
@@ -539,5 +659,10 @@ export const scenarios: Scenario[] = [
     gps: gpsWalkThreeRoadJunction,
     id: 'scenario-four',
     roads: threeRoadJunction
+  },
+  {
+    gps: gpsBoxRoads,
+    id: 'scenario-five',
+    roads: boxRoads
   }
 ];

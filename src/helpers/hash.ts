@@ -35,10 +35,8 @@ export const createPointFeatureHash = (pointFeature: Feature<Point>) => {
   return hash;
 };
 
-export const createPointHash = (point: GeoJSON.Position) => {
-  const hash = geohash.encode(point[1], point[0]);
-  return hash;
-};
+export const createPointHash = (point: GeoJSON.Position) =>
+  geohash.encode(point[1], point[0]);
 
 /**
  * Create a hash of a polygon feature

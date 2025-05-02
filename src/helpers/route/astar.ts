@@ -1,4 +1,4 @@
-import { createPointHash } from './hash';
+import { createPointHash } from '../hash';
 
 export type GraphNode = {
   id: string;

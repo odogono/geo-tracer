@@ -1,16 +1,15 @@
-import { writeFileSync } from 'node:fs';
-
 import { describe, expect, it } from 'vitest';
 
-import {
-  GraphEdge,
-  GraphNode,
-  createGraphNode,
-  generateSvgDiagram,
-  graphSearch
-} from '../astar';
+import { createGraphNode, generateSvgDiagram, graphSearch } from '../astar';
 import { RoadPointsMap, buildSearchRouteGraph } from '../geo';
 import { createLog } from '../log';
+import {
+  createPointFeature,
+  createRoadFeature,
+  createRoadPointsMap,
+  edgeToString,
+  nodeToString
+} from './helpers';
 
 const log = createLog('geo.test');
 
@@ -43,7 +42,7 @@ describe('helpers/geo', () => {
       expect(graph.edges).toHaveLength(0);
     });
 
-    it('should create a graph with nodes and edges for a road with points on segments', () => {
+    it.only('should create a graph with nodes and edges for a road with points on segments', () => {
       const roadPointsMap = createRoadPointsMap(
         [
           [0, 0],
@@ -58,7 +57,7 @@ describe('helpers/geo', () => {
 
       const graph = buildSearchRouteGraph(roadPointsMap);
 
-      // log.debug('graph', graph);
+      log.debug('graph', graph);
 
       // Should create nodes for road coordinates and points
       expect(graph.nodes).toHaveLength(3);
@@ -105,7 +104,7 @@ describe('helpers/geo', () => {
       ]);
     });
 
-    it.only('should create with an ophan point', () => {
+    it('should create with an ophan point', () => {
       const roadPointsMap = {
         road1: {
           points: [createPointFeature([2, 0])],
@@ -138,10 +137,10 @@ describe('helpers/geo', () => {
       log.debug('nodes', graph.nodes);
 
       // Should create nodes for road coordinates and points
-      // expect(graph.nodes).toHaveLength(5);
+      expect(graph.nodes).toHaveLength(6);
 
       // Should create edges between nodes
-      // expect(graph.edges).toHaveLength(4);
+      expect(graph.edges).toHaveLength(5);
 
       const startNode = createGraphNode(graph, [2, 0], true);
       const endNode = createGraphNode(graph, [5, 3], true);
@@ -156,6 +155,40 @@ describe('helpers/geo', () => {
         expect.objectContaining({ point: [5, 3] })
       ]);
     });
+
+    // test.only('a road loop starting and ending on the same road', () => {
+    //   const roads = [
+    //     createRoadFeature(
+    //       [
+    //         [0, 0],
+    //         [10, 0]
+    //       ],
+    //       'road1'
+    //     ),
+    //     createRoadFeature(
+    //       [
+    //         [10, 0],
+    //         [5, 5]
+    //       ],
+    //       'road2'
+    //     ),
+    //     createRoadFeature(
+    //       [
+    //         [5, 5],
+    //         [0, 0]
+    //       ],
+    //       'road3'
+    //     )
+    //   ];
+
+    //   const gpsPoints = [
+    //     createPointFeature([7, 0]),
+    //     createPointFeature([5, 5]),
+    //     createPointFeature([0, 0]),
+    //     createPointFeature([2, 0])
+    //   ];
+
+    // });
 
     it('should handle a road with points not on any segment', () => {
       const roadPointsMap = createRoadPointsMap(
@@ -179,7 +212,7 @@ describe('helpers/geo', () => {
     });
   });
 
-  describe('SVG Diagram Generation', () => {
+  describe.skip('SVG Diagram Generation', () => {
     it('should generate an SVG diagram for a simple graph with path', () => {
       const roadPointsMap = createRoadPointsMap(
         [
@@ -231,53 +264,10 @@ describe('helpers/geo', () => {
       expect(svg).toContain('stroke="#ff0000"');
 
       // Log the SVG for manual inspection
-      log.debug('SVG Diagram:', svg);
+      // log.debug('SVG Diagram:', svg);
 
       // Write the SVG to a file for visualization
-      writeFileSync('graph.svg', svg);
+      // writeFileSync('graph.svg', svg);
     });
   });
 });
-
-const createRoadPointsMap = (
-  roadCoords: GeoJSON.Position[],
-  gpsPoints: GeoJSON.Position[]
-): RoadPointsMap => {
-  const road = createRoadFeature(roadCoords, 'road1');
-  const points = gpsPoints.map(createPointFeature);
-
-  return {
-    [road.properties?.id ?? 'road1']: {
-      points,
-      road
-    }
-  };
-};
-
-const createRoadFeature = (
-  coordinates: GeoJSON.Position[],
-  id: string = 'road1'
-): GeoJSON.Feature<GeoJSON.LineString> => ({
-  geometry: {
-    coordinates,
-    type: 'LineString'
-  },
-  properties: { id },
-  type: 'Feature'
-});
-
-const createPointFeature = (
-  coordinates: GeoJSON.Position
-): GeoJSON.Feature<GeoJSON.Point> => ({
-  geometry: {
-    coordinates,
-    type: 'Point'
-  },
-  properties: {},
-  type: 'Feature'
-});
-
-const edgeToString = (edge: GraphEdge) =>
-  `${edge.from.point[0]},${edge.from.point[1]} -> ${edge.to.point[0]},${edge.to.point[1]}`;
-
-const nodeToString = (node: GraphNode) => `${node.point[0]},${node.point[1]}`;

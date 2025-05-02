@@ -5,13 +5,13 @@ import { Feature, FeatureCollection, LineString, Point } from 'geojson';
 
 import {
   NearestFeatureResult,
-  RoadPointsMap,
   buildSearchRouteGraph,
   findPointOnNearestFeature
 } from '@helpers/geo';
 import { createLog } from '@helpers/log';
+import { createGraphNode, graphSearch } from '@helpers/route/astar';
+import { GpsPointFeature, RoadPointsMap } from '@types';
 
-import { createGraphNode, graphSearch } from '../../../helpers/astar';
 import { scenarios } from '../data';
 import { bboxSum } from '../helpers';
 import { FeatureCollectionWithProperties } from '../types';
@@ -80,7 +80,7 @@ const createRoute = (
     return result;
   }
 
-  log.debug('roadPointsMap nodes', nodes);
+  // log.debug('roadPointsMap nodes', nodes);
   const startNode = nodes.features.at(0);
   const endNode = nodes.features.at(-1);
 
@@ -88,7 +88,7 @@ const createRoute = (
     return result;
   }
 
-  // log.debug('roadPointsMap', roadPointsMap);
+  log.debug('roadPointsMap', roadPointsMap);
 
   // Get the ordered nodes that form our route, including road transition points
   const graph = buildSearchRouteGraph(roadPointsMap);
@@ -121,21 +121,23 @@ const createRoute = (
 };
 
 /**
- * Maps src points onto the nearest roads
+ * Maps gps points onto the nearest roads
  *
- * @param src
+ * @param gps
  * @param roads
  * @returns
  */
 const mapLineString = (
-  src: FeatureCollection<LineString>,
+  gps: FeatureCollection<LineString>,
   roads: FeatureCollection<LineString>
 ) => {
   const result: NearestFeatureResult[] = [];
 
   const roadPointsMap: RoadPointsMap = {};
 
-  for (const feature of src.features) {
+  const mappedGpsPoints: GpsPointFeature[] = [];
+
+  for (const feature of gps.features) {
     for (const coordinate of feature.geometry.coordinates) {
       const nearest = findPointOnNearestFeature(coordinate, roads);
       if (nearest.length === 0) {
@@ -151,8 +153,14 @@ const mapLineString = (
       if (!roadPointsMap[roadHash]) {
         roadPointsMap[roadHash] = { points: [], road };
       }
+      point.properties = {
+        ...point.properties,
+        roadHash: road.properties?.hash
+      };
 
       roadPointsMap[roadHash].points.push(point);
+
+      mappedGpsPoints.push(point);
     }
   }
 
@@ -168,6 +176,7 @@ const mapLineString = (
   };
 
   return {
+    mappedGpsPoints,
     nodes: nodesFC,
     nodesAndRoads: result,
     roadPointsMap
