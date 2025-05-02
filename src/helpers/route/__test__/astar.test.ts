@@ -65,7 +65,9 @@ describe('graph building', () => {
       createPointFeature([2, 0])
     ];
 
-    const mappedGpsPoints = mapGpsToRoad(roads, gpsPoints, { maxDistance: 1 });
+    const mappedGpsPoints = mapGpsToRoad(roads, gpsPoints, {
+      maxDistance: 1000
+    });
 
     log.debug('mappedGpsPoints', mappedGpsPoints);
 

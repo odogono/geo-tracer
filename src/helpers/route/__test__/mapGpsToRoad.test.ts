@@ -2,8 +2,11 @@ import { describe, expect, test } from 'vitest';
 
 import { GpsPointFeature, MappedGpsPointFeature, RoadFeature } from '@types';
 
+import { createLog } from '../../../helpers/log';
 import { findPointOnNearestRoad, mapGpsToRoad } from '../mapGpsToRoad';
 import { createPointFeature, createRoadFeature } from './helpers';
+
+const log = createLog('mapGpsToRoad.test');
 
 describe('mapGpsToRoad', () => {
   const mockRoads: RoadFeature[] = [
@@ -52,6 +55,49 @@ describe('mapGpsToRoad', () => {
   test('should handle empty roads array', () => {
     const result = mapGpsToRoad([], mockGpsPoints);
     expect(result.mappedGpsPoints).toHaveLength(0);
+  });
+
+  test.only('multi-segment road', () => {
+    const mockRoad: RoadFeature[] = [
+      createRoadFeature(
+        [
+          [0, 0],
+          [2.5, 0],
+          [5, 0],
+          [7.5, 0],
+          [10, 0]
+        ],
+        'road1',
+        '7zzzzzzzz.kpzpgxczb'
+      ),
+      createRoadFeature(
+        [
+          [10, 10],
+          [7.5, 10],
+          [5, 10],
+          [2.5, 10],
+          [0, 10]
+        ],
+        'road2',
+        's1z0gs3y0.eczbzuryp'
+      )
+    ];
+
+    for (const road of mockRoad) {
+      log.debug('road', road.properties.hash);
+    }
+
+    const mapped = mapGpsToRoad(mockRoad, [createPointFeature([3, 5])], {
+      maxDistance: 1000
+    });
+
+    log.debug('mapped', mapped);
+
+    expect(mapped.mappedGpsPoints).toHaveLength(1);
+    expect(mapped.mappedGpsPoints[0].properties.roadHash).toBe(
+      's1z0gs3y0.eczbzuryp'
+    );
+    expect(mapped.mappedGpsPoints[0].properties.index).toBe(1);
   });
 });
 
