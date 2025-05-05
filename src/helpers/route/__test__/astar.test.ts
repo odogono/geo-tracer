@@ -54,6 +54,38 @@ describe('graph building', () => {
     )
   ];
 
+  test('simple path', () => {
+    const gpsPoints = [
+      createPointFeature([0, 0]), // rcpz
+      createPointFeature([10, 0]) // xzbq
+    ];
+
+    // map gps point to points that are on the road
+    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
+      maxDistance: 1000
+    });
+
+    const { path } = buildGraph(roads, mappedGpsPoints);
+
+    expect(path).toEqual(['7zzzzzzzz', 'kpzpgxczb']);
+  });
+
+  test('simple path reversed', () => {
+    const gpsPoints = [
+      createPointFeature([10, 0]), // xzbq
+      createPointFeature([0, 0]) // rcpz
+    ];
+
+    // map gps point to points that are on the road
+    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
+      maxDistance: 1000
+    });
+
+    const { path } = buildGraph(roads, mappedGpsPoints);
+
+    expect(path).toEqual(['kpzpgxczb', '7zzzzzzzz']);
+  });
+
   test('first path', () => {
     const gpsPoints = [
       createPointFeature([7, 0]), // rcpz
@@ -71,7 +103,7 @@ describe('graph building', () => {
     expect(path).toEqual(['kpuzzrcpz', 'kpzpgxczb', 's0mq4xzbq', 's0gs3y0zh']);
   });
 
-  test('a road loop starting and ending on the same road', () => {
+  test('second path', () => {
     // get the road of the current point
     // get the road of the next point
 
@@ -80,7 +112,6 @@ describe('graph building', () => {
       createPointFeature([7.5, 2.5]), // xzbq
       createPointFeature([5, 5]), // y0zh
       createPointFeature([0, 0]) // zzzz
-      // createPointFeature([2, 0]) // xbrg
     ];
 
     // map gps point to points that are on the road
@@ -88,7 +119,7 @@ describe('graph building', () => {
       maxDistance: 1000
     });
 
-    log.debug('mappedGpsPoints', mappedGpsPoints);
+    // log.debug('mappedGpsPoints', mappedGpsPoints);
 
     const { path } = buildGraph(roads, mappedGpsPoints);
 
@@ -99,34 +130,35 @@ describe('graph building', () => {
       's0gs3y0zh',
       '7zzzzzzzz'
     ]);
+  });
+  test('third path', () => {
+    // get the road of the current point
+    // get the road of the next point
 
-    // build a graph from the points and roads
+    const gpsPoints = [
+      createPointFeature([7, 0]), // kpuzzrcpz
+      createPointFeature([7.5, 2.5]), // s0mq4xzbq
+      createPointFeature([5, 5]), // s0gs3y0zh
+      createPointFeature([0, 0]), // 7zzzzzzzz
+      createPointFeature([2, 0]) // kpcrvxbrg
+    ];
 
-    // the correct path is:
-    // kpuzzrcpz -> kpzpgxczb
-    // kpzpgxczb -> s0mq4xzbq
-    // s0mq4xzbq -> s0gs3y0zh
-    // s0gs3y0zh -> 7zzzzzzzz
-    // 7zzzzzzzz -> kpcrvxbrg
+    // map gps point to points that are on the road
+    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
+      maxDistance: 1000
+    });
 
-    // associatePointsWithRoads(gpsPoints, roads);
-    // const graph = buildRouteGraphFromRoadsAndPoints(roads, gpsPoints);
+    // log.debug('mappedGpsPoints', mappedGpsPoints);
 
-    // log.debug('graph', graph);
+    const { path } = buildGraph(roads, mappedGpsPoints);
 
-    // expect(graph.nodes).toEqual([
-    //   expect.objectContaining({ point: [7, 0] }),
-    //   expect.objectContaining({ point: [10, 0] }),
-    //   expect.objectContaining({ point: [5, 5] }),
-    //   expect.objectContaining({ point: [0, 0] }),
-    //   expect.objectContaining({ point: [2, 0] })
-    // ]);
-
-    // expect(graph.edges).toEqual([
-    //   expect.objectContaining({ from: [7, 0], to: [10, 0] }),
-    //   expect.objectContaining({ from: [10, 0], to: [5, 5] }),
-    //   expect.objectContaining({ from: [5, 5], to: [0, 0] }),
-    //   expect.objectContaining({ from: [0, 0], to: [2, 0] })
-    // ]);
+    expect(path).toEqual([
+      'kpuzzrcpz',
+      'kpzpgxczb',
+      's0mq4xzbq',
+      's0gs3y0zh',
+      '7zzzzzzzz',
+      'kpcrvxbrg'
+    ]);
   });
 });

@@ -152,6 +152,11 @@ const visitNode = (context: VisitContext) => {
     const nextRoad = findNextRoad(nodeMap, currentHash, nextHash);
     const targetRoadHash = getNodeRoadHash(nextRoad) ?? nextRoadHash;
 
+    if (!targetRoadHash) {
+      log.error(currentGpsIndex, 'no target road hash', nextHash);
+      return context;
+    }
+
     log.debug(
       currentGpsIndex,
       `target ${hashToS(nextHash)} on next road ${hashToS(targetRoadHash)}`
@@ -167,7 +172,16 @@ const visitNode = (context: VisitContext) => {
       return context;
     }
 
-    log.debug(currentGpsIndex, 'joinNode', hashToS(joinNode));
+    if (joinNode === nextHash) {
+      return visitNode({
+        ...context,
+        currentGpsIndex: currentGpsIndex + 1,
+        currentHash: nextHash,
+        path: [...context.path, nextHash]
+      });
+    }
+
+    // log.debug(currentGpsIndex, 'joinNode', hashToS(joinNode));
 
     return visitNode({
       ...context,
