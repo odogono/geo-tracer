@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 
 import { getRoadFeatureBBox } from '../../geo';
 import { createLog } from '../../log';
+import { buildGraph } from '../buildGraph';
 import { mapGpsToRoad } from '../mapGpsToRoad';
 import { createPointFeature, createRoadFeature } from './helpers';
 
@@ -26,50 +27,87 @@ describe('geo', () => {
 });
 
 describe('graph building', () => {
-  test('a road loop starting and ending on the same road', () => {
-    const roads = [
-      createRoadFeature(
-        [
-          [0, 0],
-          [10, 0]
-        ],
-        'road1',
-        '7zzzzzzzz.kpzpgxczb'
-      ),
-      createRoadFeature(
-        [
-          [10, 0],
-          [5, 5]
-        ],
-        'road2',
-        'kpzpgxczb.s0gs3y0zh'
-      ),
-      createRoadFeature(
-        [
-          [5, 5],
-          [0, 0]
-        ],
-        'road3',
-        's0gs3y0zh.7zzzzzzzz'
-      )
+  const roads = [
+    createRoadFeature(
+      [
+        [0, 0],
+        [10, 0]
+      ],
+      'road1',
+      '7zzzzzzzz.kpzpgxczb'
+    ),
+    createRoadFeature(
+      [
+        [10, 0],
+        [5, 5]
+      ],
+      'road2',
+      'kpzpgxczb.s0gs3y0zh'
+    ),
+    createRoadFeature(
+      [
+        [5, 5],
+        [0, 0]
+      ],
+      'road3',
+      's0gs3y0zh.7zzzzzzzz'
+    )
+  ];
+
+  test('first path', () => {
+    const gpsPoints = [
+      createPointFeature([7, 0]), // rcpz
+      createPointFeature([7.5, 2.5]), // xzbq
+      createPointFeature([5, 5]) // y0zh
     ];
 
+    // map gps point to points that are on the road
+    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
+      maxDistance: 1000
+    });
+
+    const { path } = buildGraph(roads, mappedGpsPoints);
+
+    expect(path).toEqual(['kpuzzrcpz', 'kpzpgxczb', 's0mq4xzbq', 's0gs3y0zh']);
+  });
+
+  test('a road loop starting and ending on the same road', () => {
     // get the road of the current point
     // get the road of the next point
 
     const gpsPoints = [
-      createPointFeature([7, 0]),
-      createPointFeature([7.5, 2.5]),
-      createPointFeature([5, 5]),
-      createPointFeature([0, 0]),
-      createPointFeature([2, 0])
+      createPointFeature([7, 0]), // rcpz
+      createPointFeature([7.5, 2.5]), // xzbq
+      createPointFeature([5, 5]), // y0zh
+      createPointFeature([0, 0]) // zzzz
+      // createPointFeature([2, 0]) // xbrg
     ];
 
-    const mappedGpsPoints = mapGpsToRoad(roads, gpsPoints, {
+    // map gps point to points that are on the road
+    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
       maxDistance: 1000
     });
 
     log.debug('mappedGpsPoints', mappedGpsPoints);
+
+    const { path } = buildGraph(roads, mappedGpsPoints);
+
+    expect(path).toEqual([
+      'kpuzzrcpz',
+      'kpzpgxczb',
+      's0mq4xzbq',
+      's0gs3y0zh',
+      '7zzzzzzzz'
+    ]);
+
+    // build a graph from the points and roads
+
+    // the correct path is:
+    // kpuzzrcpz -> kpzpgxczb
+    // kpzpgxczb -> s0mq4xzbq
+    // s0mq4xzbq -> s0gs3y0zh
+    // s0gs3y0zh -> 7zzzzzzzz
+    // 7zzzzzzzz -> kpcrvxbrg
 
     // associatePointsWithRoads(gpsPoints, roads);
     // const graph = buildRouteGraphFromRoadsAndPoints(roads, gpsPoints);

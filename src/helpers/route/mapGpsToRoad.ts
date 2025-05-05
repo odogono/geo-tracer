@@ -26,7 +26,7 @@ export const mapGpsToRoad = (
   gps: GpsPointFeature[],
   options: MapGpsToRoadOptions = { maxDistance: 0.005 }
 ) => {
-  const mappedGpsPoints: GpsPointFeature[] = [];
+  const mappedGpsPoints: MappedGpsPointFeature[] = [];
 
   for (const gpsPoint of gps) {
     // for (const coordinate of feature.geometry) {
