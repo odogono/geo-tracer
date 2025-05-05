@@ -26,6 +26,94 @@ describe('geo', () => {
   });
 });
 
+describe('cross roads', () => {
+  const roads = [
+    createRoadFeature(
+      [
+        [0, -10],
+        [0, 0]
+      ],
+      'road1',
+      '7ypzpgxcz.7zzzzzzzz'
+    ),
+    createRoadFeature(
+      [
+        [0, 0],
+        [0, 10]
+      ],
+      'road2',
+      '7zzzzzzzz.eczbzuryp'
+    ),
+    createRoadFeature(
+      [
+        [0, 0],
+        [-10, 0]
+      ],
+      'road3',
+      '7zzzzzzzz.7zbzurypz'
+    ),
+    createRoadFeature(
+      [
+        [0, 0],
+        [10, 0]
+      ],
+      'road4',
+      '7zzzzzzzz.kpzpgxczb'
+    )
+  ];
+
+  test('north to south', () => {
+    const gpsPoints = [
+      createPointFeature([0, -10]), // rcpz
+      createPointFeature([0, 10]) // xzbq
+    ];
+
+    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
+      maxDistance: 1000
+    });
+
+    const { path } = buildGraph(roads, mappedGpsPoints);
+
+    expect(path).toEqual(['7ypzpgxcz', '7zzzzzzzz', 'eczbzuryp']);
+  });
+
+  test('north to east', () => {
+    const gpsPoints = [
+      createPointFeature([0, -10]), // rcpz
+      createPointFeature([10, 0]) // xzbq
+    ];
+
+    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
+      maxDistance: 1000
+    });
+
+    const { path } = buildGraph(roads, mappedGpsPoints);
+
+    expect(path).toEqual(['7ypzpgxcz', '7zzzzzzzz', 'kpzpgxczb']);
+  });
+
+  test.only('north to south, with error', () => {
+    const gpsPoints = [
+      createPointFeature([0, -10]), // 7ypzpgxcz
+      createPointFeature([1, 0]), // kpbxyzbpv
+      createPointFeature([0, 10]) // eczbzuryp
+    ];
+
+    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
+      maxDistance: 1000
+    });
+
+    const { path } = buildGraph(roads, mappedGpsPoints);
+
+    log.debug(
+      'path',
+      path.map(p => p.slice(-4))
+    );
+
+    expect(path).toEqual(['7ypzpgxcz', '7zzzzzzzz', 'eczbzuryp']);
+  });
+});
+
 describe('graph building', () => {
   const roads = [
     createRoadFeature(

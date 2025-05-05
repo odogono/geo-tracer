@@ -13,41 +13,6 @@ type VisitContext = {
   visitedNodes: Set<string>;
 };
 
-const findNextRoad = (
-  nodeMap: Map<string, MappedGpsPointFeature | RoadFeature>,
-  currentHash: string,
-  targetHash: string
-) => {
-  const aToB = nodeMap.get(`${currentHash}.${targetHash}`);
-  if (aToB) {
-    return aToB;
-  }
-
-  const bToA = nodeMap.get(`${targetHash}.${currentHash}`);
-
-  if (bToA) {
-    return bToA;
-  }
-
-  return undefined;
-};
-
-const isNodeRoad = (
-  node: MappedGpsPointFeature | RoadFeature | undefined
-): node is RoadFeature =>
-  node ? node.properties.roadHash === undefined : false;
-
-const isNodeGpsPoint = (
-  node: MappedGpsPointFeature | RoadFeature | undefined
-): node is MappedGpsPointFeature => node?.properties.roadHash !== undefined;
-
-const getNodeRoadHash = (
-  node: MappedGpsPointFeature | RoadFeature | undefined
-) => (isNodeRoad(node) ? node.properties.hash : node?.properties.roadHash);
-
-const getNodeGpsPoint = (node: MappedGpsPointFeature | RoadFeature) =>
-  isNodeGpsPoint(node) ? node.properties.hash : undefined;
-
 export const buildGraph = (
   roads: RoadFeature[],
   gpsPoints: MappedGpsPointFeature[]
@@ -79,12 +44,16 @@ export const buildGraph = (
     visitedNodes: new Set<string>([hash])
   };
 
-  const { path } = visitNode(context);
+  const resultContext = visitNode(context);
+
+  const { path } = healPath(resultContext);
 
   log.debug('path', path.map(hashToS));
 
   return { path };
 };
+
+const healPath = (context: VisitContext) => context;
 
 const visitNode = (context: VisitContext) => {
   const { currentGpsIndex, currentHash, gpsPoints, nodeMap, visitedNodes } =
@@ -168,7 +137,8 @@ const visitNode = (context: VisitContext) => {
     const joinNode = getJoinNode(currentHash, roadHash, targetRoadHash);
 
     if (!joinNode) {
-      log.debug(currentGpsIndex, 'no join node');
+      log.error(currentGpsIndex, 'no join node');
+      log.error(currentGpsIndex, 'nextRoadHash', hashToS(nextRoadHash));
       return context;
     }
 
@@ -190,21 +160,6 @@ const visitNode = (context: VisitContext) => {
       path: [...context.path, joinNode]
     });
   }
-
-  // return visitNode({
-  //   ...context,
-  //   path: [...path, joinNode],
-  //   visitedNodes: new Set<string>([...visitedNodes, joinNode]),
-  // })
-
-  // if (currentNode === hash) {
-  //   return visitNode({
-  //     ...context,
-  //     currentGpsIndex: currentGpsIndex + 1,
-  //     path: [...path, hash],
-  //     visitedNodes: new Set<string>([...visitedNodes, hash])
-  //   });
-  // }
 };
 
 const hashToS = (hash: string | undefined) => {
@@ -238,9 +193,68 @@ const getJoinNode = (
 
   if (roadAStart === roadBEnd) {
     return roadAStart;
-  } else if (roadAEnd === roadBStart) {
-    return roadAEnd;
-  } else {
-    return undefined;
   }
+  if (roadAEnd === roadBStart) {
+    return roadAEnd;
+  }
+  if (roadAStart === roadBStart) {
+    return roadAStart;
+  }
+  if (roadAEnd === roadBEnd) {
+    return roadAEnd;
+  }
+
+  return undefined;
 };
+
+const findNextRoad = (
+  nodeMap: Map<string, MappedGpsPointFeature | RoadFeature>,
+  currentHash: string,
+  targetHash: string
+) => {
+  const aToB = nodeMap.get(`${currentHash}.${targetHash}`);
+  if (aToB) {
+    return aToB;
+  }
+
+  const bToA = nodeMap.get(`${targetHash}.${currentHash}`);
+
+  if (bToA) {
+    return bToA;
+  }
+
+  // log.debug('findNextRoad', hashToS(currentHash), hashToS(targetHash));
+
+  const currentNode = nodeMap.get(currentHash);
+  const targetNode = nodeMap.get(targetHash);
+  const currentRoadHash = getNodeRoadHash(currentNode);
+  const targetRoadHash = getNodeRoadHash(targetNode);
+
+  // log.debug('findNextRoad', hashToS(currentRoadHash), hashToS(targetRoadHash));
+
+  const joinNode = getJoinNode(currentHash, currentRoadHash, targetRoadHash);
+
+  // log.debug('findNextRoad join', hashToS(joinNode));
+
+  if (joinNode) {
+    return nodeMap.get(joinNode);
+  }
+
+  return undefined;
+};
+
+const isNodeRoad = (
+  node: MappedGpsPointFeature | RoadFeature | undefined
+): node is RoadFeature =>
+  node ? node.properties.roadHash === undefined : false;
+
+const isNodeGpsPoint = (
+  node: MappedGpsPointFeature | RoadFeature | undefined
+): node is MappedGpsPointFeature => node?.properties.roadHash !== undefined;
+
+const getNodeRoadHash = (
+  node: MappedGpsPointFeature | RoadFeature | undefined
+) => (isNodeRoad(node) ? node.properties.hash : node?.properties.roadHash);
+
+const getNodeGpsPoint = (node: MappedGpsPointFeature | RoadFeature) =>
+  isNodeGpsPoint(node) ? node.properties.hash : undefined;
