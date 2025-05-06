@@ -1,19 +1,17 @@
 import { MappedGpsPointFeature, RoadFeature } from '@types';
 
 import { createLog } from '../log';
+import {
+  getLinkedNode,
+  getNodeGpsPoint,
+  getNodeRoad,
+  getNodeRoadHash,
+  getRoadNodeIds,
+  hashToS
+} from './helpers';
+import { NodeMap, VisitContext } from './types';
 
 const log = createLog('buildGraph');
-
-type NodeMap = Map<string, MappedGpsPointFeature | RoadFeature>;
-
-type VisitContext = {
-  currentGpsIndex: number;
-  currentHash: string;
-  gpsPoints: MappedGpsPointFeature[];
-  nodeMap: NodeMap;
-  path: string[];
-  visitedNodes: Set<string>;
-};
 
 export const buildGraph = (
   roads: RoadFeature[],
@@ -24,6 +22,7 @@ export const buildGraph = (
   for (const road of roads) {
     const { hash } = road.properties;
     const [start, end] = getRoadNodeIds(hash);
+    log.debug('adding road to nodeMap', hashToS(hash));
     nodeMap.set(hash, road);
     nodeMap.set(start, road);
     nodeMap.set(end, road);
@@ -35,7 +34,7 @@ export const buildGraph = (
   }
 
   const start = gpsPoints[0];
-  const { hash, roadHash } = start.properties;
+  const { hash } = start.properties;
 
   const context: VisitContext = {
     currentGpsIndex: 0,
@@ -43,16 +42,17 @@ export const buildGraph = (
     gpsPoints,
     nodeMap,
     path: [hash],
+    roads,
     visitedNodes: new Set<string>([hash])
   };
 
   const resultContext = visitNode(context);
 
-  const { path } = healPath(resultContext);
+  const healedContext = healPath(resultContext);
 
-  log.debug('path', path.map(hashToS));
+  // log.debug('path', path.map(hashToS));
 
-  return { path };
+  return healedContext;
 };
 
 /**
@@ -109,14 +109,13 @@ const healPath = (context: VisitContext) => {
 };
 
 const visitNode = (context: VisitContext) => {
-  const { currentGpsIndex, currentHash, gpsPoints, nodeMap, visitedNodes } =
-    context;
+  const { currentGpsIndex, currentHash, gpsPoints, nodeMap } = context;
 
   const currentNode = nodeMap.get(currentHash);
 
   if (!currentNode) {
     log.error(currentGpsIndex, 'node not found', currentHash);
-    const keys = Array.from(nodeMap.keys());
+    const keys = Array.from(nodeMap.keys()).map(hashToS);
     log.error(currentGpsIndex, keys);
     return context;
   }
@@ -124,7 +123,7 @@ const visitNode = (context: VisitContext) => {
   // the current gps point we are aiming for
   // const target = gpsPoints[currentGpsIndex];
   // const { hash, roadHash } = target.properties;
-  const roadHash = getNodeRoadHash(currentNode);
+  let roadHash = getNodeRoadHash(currentNode);
   const nextHash = getNodeGpsPoint(gpsPoints[currentGpsIndex + 1]);
   const nextRoadHash = getNodeRoadHash(gpsPoints[currentGpsIndex + 1]);
 
@@ -133,9 +132,15 @@ const visitNode = (context: VisitContext) => {
     return context;
   }
 
+  // check whether the next road is linked to the hash
+  if (getLinkedNode(roadHash, nextRoadHash) === currentHash) {
+    log.debug(currentGpsIndex, 'linked roads', roadHash, nextRoadHash);
+    roadHash = nextRoadHash;
+  }
+
   log.debug(
     currentGpsIndex,
-    `🆕 currentHash ${hashToS(currentHash)} target ${hashToS(nextHash)}`
+    `🆕 currentHash ${hashToS(currentHash)} target ${hashToS(nextHash)} currentRoad ${hashToS(roadHash)} nextRoad ${hashToS(nextRoadHash)}`
   );
 
   // log.debug(
@@ -164,6 +169,8 @@ const visitNode = (context: VisitContext) => {
     //   return context;
     // }
 
+    log.debug(currentGpsIndex, 'adding to path', hashToS(nextHash));
+
     return visitNode({
       ...context,
       currentGpsIndex: currentGpsIndex + 1,
@@ -188,6 +195,15 @@ const visitNode = (context: VisitContext) => {
 
     // target is on the next road
     const joinNode = getJoinNode(currentHash, roadHash, targetRoadHash);
+    log.debug(
+      currentGpsIndex,
+      'getting join node',
+      currentHash,
+      roadHash,
+      targetRoadHash,
+      '=',
+      joinNode
+    );
 
     if (!joinNode) {
       log.error(currentGpsIndex, 'no join node');
@@ -215,25 +231,14 @@ const visitNode = (context: VisitContext) => {
   }
 };
 
-const hashToS = (hash: string | undefined) => {
-  if (!hash) {
-    return 'undefined';
-  }
-  return hash.indexOf('.') > -1
-    ? hash
-        .split('.')
-        .map(s => s.slice(-4))
-        .join('.')
-    : hash.slice(-4);
-};
-
-const getRoadNodeIds = (roadHash: string) => roadHash.split('.');
-
 const getJoinNode = (
   currentHash: string,
-  roadAHash: string,
-  roadBHash: string
+  roadAHash: string | undefined,
+  roadBHash: string | undefined
 ) => {
+  if (!roadAHash || !roadBHash) {
+    return undefined;
+  }
   const [roadAStart, roadAEnd] = getRoadNodeIds(roadAHash);
   const [roadBStart, roadBEnd] = getRoadNodeIds(roadBHash);
 
@@ -285,7 +290,7 @@ const findNextRoad = (
 
   // log.debug('findNextRoad', hashToS(currentRoadHash), hashToS(targetRoadHash));
 
-  const joinNode = getJoinNode(currentHash, currentRoadHash, targetRoadHash);
+  const joinNode = getJoinNode(currentHash, currentRoadHash!, targetRoadHash!);
 
   // log.debug('findNextRoad join', hashToS(joinNode));
 
@@ -294,37 +299,4 @@ const findNextRoad = (
   }
 
   return undefined;
-};
-
-const isNodeRoad = (
-  node: MappedGpsPointFeature | RoadFeature | undefined
-): node is RoadFeature =>
-  node ? node.properties.roadHash === undefined : false;
-
-const isNodeGpsPoint = (
-  node: MappedGpsPointFeature | RoadFeature | undefined
-): node is MappedGpsPointFeature => node?.properties.roadHash !== undefined;
-
-const getNodeRoadHash = (
-  node: MappedGpsPointFeature | RoadFeature | undefined
-) => (isNodeRoad(node) ? node.properties.hash : node?.properties.roadHash);
-
-const getNodeGpsPoint = (node: MappedGpsPointFeature | RoadFeature) =>
-  isNodeGpsPoint(node) ? node.properties.hash : undefined;
-
-const getNodeRoad = (map: NodeMap, nodeHash: string | undefined) => {
-  if (!nodeHash) {
-    return undefined;
-  }
-  const node = map.get(nodeHash);
-
-  if (!node) {
-    return undefined;
-  }
-
-  if (isNodeRoad(node)) {
-    return node;
-  }
-
-  return map.get(node.properties.roadHash);
 };

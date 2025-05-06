@@ -1,15 +1,46 @@
 import { bbox as turf_bbox } from '@turf/turf';
+import { Feature, LineString } from 'geojson';
 import { describe, expect, test } from 'vitest';
 
 import { getRoadFeatureBBox } from '../../geo';
 import { createLog } from '../../log';
 import { buildGraph } from '../buildGraph';
+import { graphToFeature } from '../graphToFeature';
+import { hashToS } from '../helpers';
 import { mapGpsToRoad } from '../mapGpsToRoad';
 import { createPointFeature, createRoadFeature } from './helpers';
 
-const log = createLog('geo.test');
+const log = createLog('astar.test');
 
-describe('geo', () => {
+const flatCoords = (feature: Feature<LineString> | undefined) =>
+  feature?.geometry.coordinates.flat().map(n => Number(n.toFixed(1)));
+
+const singleRoad = [
+  createRoadFeature(
+    [
+      [0, 0],
+      [5, 0],
+      [10, 0] // kpzpgxczb
+    ],
+    'road1',
+    '7zzzzzzzz.kpzpgxczb'
+  )
+];
+
+const multiRoad = [
+  ...singleRoad,
+  createRoadFeature(
+    [
+      [10, 0], // kpzpgxczb
+      [10, 5],
+      [10, 10] // s1z0gs3y0
+    ],
+    'road2',
+    'kpzpgxczb.s1z0gs3y0'
+  )
+];
+
+describe('Path finding', () => {
   test('getRoadFeatureBBox', () => {
     const road = createRoadFeature(
       [
@@ -114,6 +145,96 @@ describe('cross roads', () => {
   });
 });
 
+describe('multi-segment road', () => {
+  test('simple road', () => {
+    const gpsPoints = [
+      createPointFeature([0, 0]), // zzzz
+      createPointFeature([10, 0]) // xczb
+    ];
+
+    const { mappedGpsPoints } = mapGpsToRoad(singleRoad, gpsPoints, {
+      maxDistance: 1000
+    });
+
+    const graphResult = buildGraph(singleRoad, mappedGpsPoints);
+
+    expect(graphResult.path).toEqual(['7zzzzzzzz', 'kpzpgxczb']);
+
+    const feature = graphToFeature(graphResult);
+
+    expect(feature?.geometry.coordinates).toEqual([
+      [0, 0],
+      [5, 0],
+      [10, 0]
+    ]);
+  });
+  test('gps start along road', () => {
+    const gpsPoints = [
+      createPointFeature([2.5, 0]),
+      createPointFeature([10, 0])
+    ];
+
+    const { mappedGpsPoints } = mapGpsToRoad(singleRoad, gpsPoints, {
+      maxDistance: 1000
+    });
+    const graphResult = buildGraph(singleRoad, mappedGpsPoints);
+    const feature = graphToFeature(graphResult);
+
+    log.debug('feature', flatCoords(feature));
+
+    expect(flatCoords(feature)).toEqual([2.5, 0, 5, 0, 10, 0]);
+  });
+  test('gps at end of road', () => {
+    const gpsPoints = [
+      createPointFeature([7.5, 0]),
+      createPointFeature([10, 0])
+    ];
+
+    const { mappedGpsPoints } = mapGpsToRoad(singleRoad, gpsPoints, {
+      maxDistance: 1000
+    });
+    const graphResult = buildGraph(singleRoad, mappedGpsPoints);
+    const feature = graphToFeature(graphResult);
+
+    expect(flatCoords(feature)).toEqual([7.5, 0, 10, 0]);
+  });
+  test('gps at mid road', () => {
+    const gpsPoints = [
+      createPointFeature([2.5, 0]),
+      createPointFeature([7.5, 0])
+    ];
+
+    const { mappedGpsPoints } = mapGpsToRoad(singleRoad, gpsPoints, {
+      maxDistance: 1000
+    });
+    const graphResult = buildGraph(singleRoad, mappedGpsPoints);
+    const feature = graphToFeature(graphResult);
+
+    log.debug('feature', flatCoords(feature));
+
+    expect(flatCoords(feature)).toEqual([2.5, 0, 5, 0, 7.5, 0]);
+  });
+
+  test('multi road', () => {
+    const gpsPoints = [
+      createPointFeature([5, 0]), // kpgxc zbzu
+      createPointFeature([10, 0]), // kpzpg xczb
+      createPointFeature([10, 5]) // s0zh7 w1z0
+    ];
+
+    const { mappedGpsPoints } = mapGpsToRoad(multiRoad, gpsPoints, {
+      maxDistance: 1000
+    });
+    const graphResult = buildGraph(multiRoad, mappedGpsPoints);
+    const feature = graphToFeature(graphResult);
+
+    log.debug('graphResult', graphResult.path.map(hashToS));
+    log.debug('feature', flatCoords(feature));
+
+    expect(flatCoords(feature)).toEqual([5, 0, 10, 0, 10, 5]);
+  });
+});
+
 describe('graph building', () => {
   const roads = [
     createRoadFeature(
@@ -188,6 +309,8 @@ describe('graph building', () => {
 
     const { path } = buildGraph(roads, mappedGpsPoints);
 
+    log.debug('path', path);
+
     expect(path).toEqual(['kpuzzrcpz', 'kpzpgxczb', 's0mq4xzbq', 's0gs3y0zh']);
   });
 
@@ -248,5 +371,28 @@ describe('graph building', () => {
       '7zzzzzzzz',
       'kpcrvxbrg'
     ]);
+  });
+
+  test('three point path', () => {
+    // road 1: zzzz.xczb
+    // road 2: xczb.s3y0
+
+    const gpsPoints = [
+      createPointFeature([5, 0]), // kpgxczbzu
+      createPointFeature([10, 0]), // kpzpgxczb
+      createPointFeature([10, 5]) // s0zh7w1z0
+    ];
+
+    const { mappedGpsPoints } = mapGpsToRoad(multiRoad, gpsPoints, {
+      maxDistance: 1000
+    });
+
+    // log.debug('mappedGpsPoints', mappedGpsPoints);
+
+    const { path } = buildGraph(multiRoad, mappedGpsPoints);
+
+    log.debug('path', path);
+
+    expect(path).toEqual(['kpgxczbzu', 'kpzpgxczb', 's0zh7w1z0']);
   });
 });
