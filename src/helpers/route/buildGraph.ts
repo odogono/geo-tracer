@@ -4,11 +4,13 @@ import { createLog } from '../log';
 
 const log = createLog('buildGraph');
 
+type NodeMap = Map<string, MappedGpsPointFeature | RoadFeature>;
+
 type VisitContext = {
   currentGpsIndex: number;
   currentHash: string;
   gpsPoints: MappedGpsPointFeature[];
-  nodeMap: Map<string, MappedGpsPointFeature | RoadFeature>;
+  nodeMap: NodeMap;
   path: string[];
   visitedNodes: Set<string>;
 };
@@ -53,7 +55,58 @@ export const buildGraph = (
   return { path };
 };
 
-const healPath = (context: VisitContext) => context;
+/**
+ * Removes nodes from the path that appear to be redundant
+ *
+ * @param context
+ * @returns
+ */
+const healPath = (context: VisitContext) => {
+  const { nodeMap, path } = context;
+  let healedPath = [...path];
+  let hasChanges = true;
+
+  // Keep iterating until no more changes are made
+  while (hasChanges) {
+    hasChanges = false;
+    const newPath: string[] = [];
+
+    for (let i = 0; i < healedPath.length; i++) {
+      const prevNode = healedPath[i - 1];
+      const currentNode = healedPath[i];
+      const nextNode = healedPath[i + 1];
+
+      // If we find a node that has the same node on both sides, skip it
+      if (prevNode && nextNode && prevNode === nextNode) {
+        const point = nodeMap.get(currentNode);
+        const road = getNodeRoad(nodeMap, currentNode);
+
+        log.debug(
+          'redundant node',
+          hashToS(currentNode),
+          hashToS(prevNode),
+          hashToS(nextNode),
+          point
+        );
+        log.debug('road', road);
+
+        hasChanges = true;
+        // remove the last entry
+        newPath.pop();
+        continue;
+      }
+
+      newPath.push(currentNode);
+    }
+
+    healedPath = newPath;
+  }
+
+  return {
+    ...context,
+    path: healedPath
+  };
+};
 
 const visitNode = (context: VisitContext) => {
   const { currentGpsIndex, currentHash, gpsPoints, nodeMap, visitedNodes } =
@@ -208,7 +261,7 @@ const getJoinNode = (
 };
 
 const findNextRoad = (
-  nodeMap: Map<string, MappedGpsPointFeature | RoadFeature>,
+  nodeMap: NodeMap,
   currentHash: string,
   targetHash: string
 ) => {
@@ -258,3 +311,20 @@ const getNodeRoadHash = (
 
 const getNodeGpsPoint = (node: MappedGpsPointFeature | RoadFeature) =>
   isNodeGpsPoint(node) ? node.properties.hash : undefined;
+
+const getNodeRoad = (map: NodeMap, nodeHash: string | undefined) => {
+  if (!nodeHash) {
+    return undefined;
+  }
+  const node = map.get(nodeHash);
+
+  if (!node) {
+    return undefined;
+  }
+
+  if (isNodeRoad(node)) {
+    return node;
+  }
+
+  return map.get(node.properties.roadHash);
+};

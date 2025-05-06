@@ -1,8 +1,10 @@
+import { length as featureLength } from '@turf/turf';
+
 import { GpsPointFeature, RoadFeature } from '@types';
 
-import { GraphEdge, GraphNode } from '../../astar';
 import { getRoadFeatureBBox } from '../../geo';
 import { createEdgeFeatureHash, createPointHash } from '../../hash';
+import { GraphEdge, GraphNode } from '../astar';
 
 export const createRoadFeature = (
   coordinates: GeoJSON.Position[],
@@ -20,6 +22,7 @@ export const createRoadFeature = (
 
   feature.properties!.hash = hash ?? createEdgeFeatureHash(feature);
   feature.bbox = feature.bbox ?? getRoadFeatureBBox(feature);
+  feature.properties!.length = featureLength(feature);
 
   return feature;
 };

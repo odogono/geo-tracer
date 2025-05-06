@@ -92,11 +92,11 @@ describe('cross roads', () => {
     expect(path).toEqual(['7ypzpgxcz', '7zzzzzzzz', 'kpzpgxczb']);
   });
 
-  test.only('north to south, with error', () => {
+  test('north to south, with error', () => {
     const gpsPoints = [
-      createPointFeature([0, -10]), // 7ypzpgxcz
-      createPointFeature([1, 0]), // kpbxyzbpv
-      createPointFeature([0, 10]) // eczbzuryp
+      createPointFeature([0, -10]), // gxcz
+      createPointFeature([1, 0]), // zbpv
+      createPointFeature([0, 10]) // uryp
     ];
 
     const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
@@ -105,10 +105,10 @@ describe('cross roads', () => {
 
     const { path } = buildGraph(roads, mappedGpsPoints);
 
-    log.debug(
-      'path',
-      path.map(p => p.slice(-4))
-    );
+    // log.debug(
+    //   'path',
+    //   path.map(p => p.slice(-4))
+    // );
 
     expect(path).toEqual(['7ypzpgxcz', '7zzzzzzzz', 'eczbzuryp']);
   });
