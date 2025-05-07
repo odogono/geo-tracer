@@ -2,12 +2,17 @@ import { bbox as turf_bbox } from '@turf/turf';
 import { Feature, LineString } from 'geojson';
 import { describe, expect, test } from 'vitest';
 
+import {
+  gpsWalkAlongTwoLineStrings,
+  twoLineStrings
+} from '../../../components/feature-canvas/data';
+import { RoadFeature } from '../../../types';
 import { getRoadFeatureBBox } from '../../geo';
 import { createLog } from '../../log';
 import { buildGraph } from '../buildGraph';
 import { graphToFeature } from '../graphToFeature';
 import { hashToS } from '../helpers';
-import { mapGpsToRoad } from '../mapGpsToRoad';
+import { mapGpsLineStringToRoad, mapGpsToRoad } from '../mapGpsToRoad';
 import { createPointFeature, createRoadFeature } from './helpers';
 
 const log = createLog('astar.test');
@@ -69,19 +74,21 @@ const multiRoad = [
 const meetingRoads = [
   createRoadFeature(
     [
-      [0, 0],
-      [5, 0],
-      [10, 0]
+      [20, 0], // krypzpgxc
+      [15, 0], // krfxvrfxv
+      [10, 0] // kpzpgxczb
     ],
-    'road1'
+    'road1',
+    'krypzpgxc.kpzpgxczb'
   ),
   createRoadFeature(
     [
-      [20, 0],
-      [15, 0],
+      [0, 0], // 7zzzzzzzz
+      [5, 0],
       [10, 0]
     ],
-    'road2'
+    'road2',
+    '7zzzzzzzz.kpzpgxczb'
   )
 ];
 
@@ -312,6 +319,9 @@ describe('multi-segment road', () => {
   });
 
   test('meeting roads', () => {
+    // 'krypzpgxc.kpzpgxczb' 20,0 -> 10, 0
+    // '7zzzzzzzz.kpzpgxczb' 0,0 -> 10, 0
+
     const gpsPoints = [
       // createPointFeature([4, 0]), // kpfzg pbxy
       // [5, 0] kpgxc zbzu
@@ -320,6 +330,44 @@ describe('multi-segment road', () => {
       createPointFeature([12, 0]), // krbxc pfpu
       // [15, 0] krfxv rfxv
       createPointFeature([16, 0]) // krgru pfzg
+    ];
+
+    const { mappedGpsPoints } = mapGpsToRoad(meetingRoads, gpsPoints, {
+      maxDistance: 1000
+    });
+
+    const graphResult = buildGraph(meetingRoads, mappedGpsPoints);
+
+    log.debug('graphResult', graphResult.path.map(hashToS));
+
+    expect(graphResult.path.map(hashToS)).toEqual([
+      // 'pbxy',
+      // 'zbzu',
+      'pcrv',
+      'xczb',
+      'pfpu',
+      // 'rfxv',
+      'pfzg'
+    ]);
+
+    const feature = graphToFeature(graphResult);
+    // log.debug('feature', flatCoords(feature));
+
+    expect(flatCoords(feature)).toEqual([
+      // 4, 0, 5, 0, 8, 0, 10, 0, 12, 0, 15, 0, 16, 0
+      8, 0, 10, 0, 12, 0, 15, 0, 16, 0
+    ]);
+  });
+
+  test('meeting roads again', () => {
+    const gpsPoints = [
+      createPointFeature([3, 0]), // kpfzg pbxy
+      // [5, 0] kpgxc zbzu
+      createPointFeature([8, 0]), // kpvxy pcrv
+      // [10, 0] kpzpg xczb
+      createPointFeature([12, 0]) // krbxc pfpu
+      // [15, 0] krfxv rfxv
+      // createPointFeature([16, 0]) // krgru pfzg
     ];
 
     const { mappedGpsPoints } = mapGpsToRoad(meetingRoads, gpsPoints, {
@@ -345,7 +393,7 @@ describe('multi-segment road', () => {
 
     expect(flatCoords(feature)).toEqual([
       // 4, 0, 5, 0, 8, 0, 10, 0, 12, 0, 15, 0, 16, 0
-      8, 0, 10, 0, 12, 0, 15, 0, 16, 0
+      3, 0, 5, 0, 8, 0, 10, 0, 12, 0
     ]);
   });
 });
@@ -435,6 +483,7 @@ describe('graph building', () => {
 
     const gpsPoints = [
       createPointFeature([7, 0]), // rcpz
+      // 10,0 xczb
       createPointFeature([7.5, 2.5]), // xzbq
       createPointFeature([5, 5]), // y0zh
       createPointFeature([0, 0]) // zzzz
@@ -447,14 +496,16 @@ describe('graph building', () => {
 
     // log.debug('mappedGpsPoints', mappedGpsPoints);
 
-    const { path } = buildGraph(roads, mappedGpsPoints);
+    const graphResult = buildGraph(roads, mappedGpsPoints);
 
-    expect(path).toEqual([
-      'kpuzzrcpz',
-      'kpzpgxczb',
-      's0mq4xzbq',
-      's0gs3y0zh',
-      '7zzzzzzzz'
+    log.debug('graphResult', graphResult.path.map(hashToS));
+
+    expect(graphResult.path.map(hashToS)).toEqual([
+      'rcpz',
+      'xczb',
+      'xzbq',
+      'y0zh',
+      'zzzz'
     ]);
   });
   test('third path', () => {
@@ -509,5 +560,22 @@ describe('graph building', () => {
     log.debug('path', path);
 
     expect(path).toEqual(['kpgxczbzu', 'kpzpgxczb', 's0zh7w1z0']);
+  });
+});
+
+describe('scenarios', () => {
+  test('scenario 3', () => {
+    const roads = twoLineStrings.features as RoadFeature[];
+
+    // const gpsPoints = gpsWalkAlongTwoLineStrings.features as MappedGpsPointFeature[];
+
+    const { mappedGpsPoints } = mapGpsLineStringToRoad(
+      roads,
+      gpsWalkAlongTwoLineStrings
+    );
+
+    const graphResult = buildGraph(roads, mappedGpsPoints);
+
+    log.debug('graphResult', graphResult.path.map(hashToS));
   });
 });

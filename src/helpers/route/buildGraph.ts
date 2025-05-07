@@ -2,10 +2,12 @@ import { MappedGpsPointFeature, RoadFeature } from '@types';
 
 import { createLog } from '../log';
 import {
+  doesRoadHashContainNode,
   getLinkedNode,
   getNodeGpsPoint,
   getNodeRoad,
   getNodeRoadHash,
+  getRoadByStartEnd,
   getRoadNodeIds,
   hashToS
 } from './helpers';
@@ -163,11 +165,6 @@ const visitNode = (context: VisitContext) => {
     roadHash = nextRoadHash;
   }
 
-  log.debug(
-    currentGpsIndex,
-    `🆕 currentHash ${hashToS(currentHash)} target ${hashToS(nextHash)} currentRoad ${hashToS(roadHash)} nextRoad ${hashToS(nextRoadHash)}`
-  );
-
   // log.debug(
   //   currentGpsIndex,
   //   'nextRoad',
@@ -176,9 +173,30 @@ const visitNode = (context: VisitContext) => {
   //   hashToS(nextHash)
   // );
 
-  if (!nextHash) {
+  if (!nextHash || !nextRoadHash) {
     log.debug(currentGpsIndex, 'no next hash');
     return context;
+  }
+
+  log.debug(
+    currentGpsIndex,
+    `🆕 currentHash ${hashToS(currentHash)} target ${hashToS(nextHash)} currentRoad ${hashToS(roadHash)} nextRoad ${hashToS(nextRoadHash)}`
+  );
+
+  if (getRoadByStartEnd(context, currentHash, nextHash)) {
+    log.debug(
+      currentGpsIndex,
+      'direct path from',
+      hashToS(currentHash),
+      'to',
+      hashToS(nextHash)
+    );
+    return visitNode({
+      ...context,
+      currentGpsIndex: currentGpsIndex + 1,
+      currentHash: nextHash,
+      path: [...context.path, nextHash]
+    });
   }
 
   // is the target point on the same road?
@@ -203,7 +221,7 @@ const visitNode = (context: VisitContext) => {
       path: [...context.path, nextHash]
     });
   } else {
-    const nextRoad = findNextRoad(nodeMap, currentHash, nextHash);
+    const nextRoad = nodeMap.get(nextRoadHash); // findNextRoad(nodeMap, currentHash, nextHash);
     const targetRoadHash = getNodeRoadHash(nextRoad) ?? nextRoadHash;
 
     if (!targetRoadHash) {
@@ -216,18 +234,28 @@ const visitNode = (context: VisitContext) => {
       `target ${hashToS(nextHash)} on next road ${hashToS(targetRoadHash)}`
     );
 
-    // log.debug(currentGpsIndex, 'nextRoad', hashToS(nextRoad?.properties.hash));
+    // if the target is a road point, then just hit the road
+    if (doesRoadHashContainNode(targetRoadHash, nextHash)) {
+      log.debug(currentGpsIndex, 'target is next road', hashToS(nextHash));
+      //   return visitNode({
+      //     ...context,
+      //     currentGpsIndex: currentGpsIndex + 1,
+      //     currentHash: nextHash,
+      //     path: [...context.path, nextHash]
+      //   });
+    }
+    // log.debug(currentGpsIndex, 'nextHash', nodeMap.get(nextHash));
 
     // target is on the next road
-    const joinNode = getJoinNode(currentHash, roadHash, targetRoadHash);
+    const joinNode = getLinkedNode(roadHash, targetRoadHash); // getJoinNode(currentHash, roadHash, targetRoadHash);
     log.debug(
       currentGpsIndex,
       'getting join node',
-      currentHash,
-      roadHash,
-      targetRoadHash,
+      hashToS(currentHash),
+      hashToS(roadHash),
+      hashToS(targetRoadHash),
       '=',
-      joinNode
+      hashToS(joinNode)
     );
 
     if (!joinNode) {
@@ -295,6 +323,7 @@ const findNextRoad = (
   currentHash: string,
   targetHash: string
 ) => {
+  log.debug('findNextRoad', hashToS(currentHash), hashToS(targetHash));
   const aToB = nodeMap.get(`${currentHash}.${targetHash}`);
   if (aToB) {
     return aToB;

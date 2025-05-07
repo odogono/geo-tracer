@@ -18,6 +18,24 @@ export const hashToS = (hash: string | undefined) => {
 
 export const getRoadNodeIds = (roadHash: string) => roadHash.split('.');
 
+export const doesRoadHashContainNode = (roadHash: string, nodeHash: string) => {
+  const [start, end] = getRoadNodeIds(roadHash);
+  return start === nodeHash || end === nodeHash;
+};
+
+export const getRoadByStartEnd = (
+  context: VisitContext,
+  start: string,
+  end: string
+): RoadFeature | undefined => {
+  const { nodeMap } = context;
+  const road = nodeMap.get(`${start}.${end}`);
+  if (road) {
+    return road as RoadFeature;
+  }
+  return nodeMap.get(`${end}.${start}`) as RoadFeature | undefined;
+};
+
 export const isNodeRoad = (
   node: MappedGpsPointFeature | RoadFeature | undefined
 ): node is RoadFeature =>
@@ -86,6 +104,12 @@ export const getLinkedNode = (
     return roadAEnd;
   }
   if (roadAStart === roadBEnd) {
+    return roadAStart;
+  }
+  if (roadAEnd === roadBEnd) {
+    return roadAEnd;
+  }
+  if (roadAStart === roadBStart) {
     return roadAStart;
   }
   return undefined;
