@@ -124,9 +124,30 @@ export const getCommonRoad = (
 export const getRoadIndex = (
   _context: VisitContext,
   road: RoadFeature,
-  node: MappedGpsPointFeature
+  node: MappedGpsPointFeature,
+  nodeHash: string
 ) => {
   const hash = node.properties.hash;
+
+  if (isNodeRoad(node)) {
+    const [start, end] = getRoadNodeIds(hash);
+    console.debug('[getRoadIndex] road node', {
+      end,
+      hash: nodeHash,
+      start
+      //   index: node.properties.index,
+      //   road: road.properties.hash,
+      //   roadHash: node.properties.roadHash
+    });
+    if (start === nodeHash) {
+      return 0;
+    }
+    if (end === nodeHash) {
+      return road.geometry.coordinates.length - 1;
+    }
+    return 0;
+  }
+
   const roadHash = node.properties.roadHash;
 
   // console.debug('[getRoadIndex]', {
@@ -135,6 +156,7 @@ export const getRoadIndex = (
   //   road: road.properties.hash,
   //   roadHash
   // });
+  // console.debug('node', node);
 
   if (roadHash === road.properties.hash) {
     return node.properties.index;

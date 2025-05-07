@@ -13,9 +13,16 @@ import { NodeMap, VisitContext } from './types';
 
 const log = createLog('buildGraph');
 
+export type BuildGraphOptions = {
+  includeGpsPoints: boolean;
+};
+
 export const buildGraph = (
   roads: RoadFeature[],
-  gpsPoints: MappedGpsPointFeature[]
+  gpsPoints: MappedGpsPointFeature[],
+  options: BuildGraphOptions = {
+    includeGpsPoints: true
+  }
 ) => {
   const nodeMap = new Map<string, MappedGpsPointFeature | RoadFeature>();
 

@@ -41,7 +41,7 @@ export const graphToFeature = (
 
     if (road) {
       const roadCoords = road.geometry.coordinates;
-      coordinates.push(...roadCoords);
+      pushCoords(coordinates, ...roadCoords);
       continue;
     }
 
@@ -71,7 +71,7 @@ export const graphToFeature = (
       return undefined;
     }
 
-    const headIndex = getRoadIndex(graph, roadNode, headNode);
+    const headIndex = getRoadIndex(graph, roadNode, headNode, head);
     // const tailIndex = tailNode.properties.index;
     // const roadNode = getNodeRoad(
     //   nodeMap,
@@ -91,7 +91,7 @@ export const graphToFeature = (
 
     if (ii === 0) {
       log.debug('headCoords', headNode.geometry.coordinates);
-      coordinates.push(headNode.geometry.coordinates);
+      pushCoords(coordinates, headNode.geometry.coordinates);
     }
 
     const isReverse = headIndex > tailIndex;
@@ -105,9 +105,13 @@ export const graphToFeature = (
     if (isReverse) {
       sliceCoords.reverse();
     }
-    coordinates.push(...sliceCoords);
+    pushCoords(coordinates, ...sliceCoords);
 
-    if (roadEndIndex < roadCoords.length) {
+    log.debug('push tail?', {
+      roadCoordsLength: roadCoords.length,
+      roadEndIndex
+    });
+    if (tailIndex + 1 < roadCoords.length) {
       log.debug(
         'tailCoords',
         // roadEndIndex,
@@ -115,11 +119,8 @@ export const graphToFeature = (
         tailNode.geometry.coordinates,
         coordinates.at(-1)
       );
-      if (
-        !arePositionsEqual(coordinates.at(-1), tailNode.geometry.coordinates)
-      ) {
-        coordinates.push(tailNode.geometry.coordinates);
-      }
+
+      pushCoords(coordinates, tailNode.geometry.coordinates);
     }
   }
 
@@ -135,4 +136,14 @@ export const graphToFeature = (
     properties: {},
     type: 'Feature'
   };
+};
+
+const pushCoords = (coordinates: Position[], ...coords: Position[]) => {
+  for (const coord of coords) {
+    if (arePositionsEqual(coordinates.at(-1), coord)) {
+      continue;
+    }
+    coordinates.push(coord);
+  }
+  return coordinates;
 };

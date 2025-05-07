@@ -66,6 +66,25 @@ const multiRoad = [
   )
 ];
 
+const meetingRoads = [
+  createRoadFeature(
+    [
+      [0, 0],
+      [5, 0],
+      [10, 0]
+    ],
+    'road1'
+  ),
+  createRoadFeature(
+    [
+      [20, 0],
+      [15, 0],
+      [10, 0]
+    ],
+    'road2'
+  )
+];
+
 const crossRoads = [
   createRoadFeature(
     [
@@ -255,7 +274,7 @@ describe('multi-segment road', () => {
     const feature = graphToFeature(graphResult);
 
     // log.debug('graphResult', graphResult.path.map(hashToS));
-    log.debug('feature', flatCoords(feature));
+    // log.debug('feature', flatCoords(feature));
 
     expect(flatCoords(feature)).toEqual([5, 0, 10, 0, 10, 5]);
   });
@@ -275,7 +294,7 @@ describe('multi-segment road', () => {
 
     const graphResult = buildGraph(longReverseRoad, mappedGpsPoints);
 
-    log.debug('graphResult', graphResult.path.map(hashToS));
+    // log.debug('graphResult', graphResult.path.map(hashToS));
 
     expect(graphResult.path.map(hashToS)).toEqual([
       'zbzu',
@@ -285,10 +304,48 @@ describe('multi-segment road', () => {
     ]);
 
     const feature = graphToFeature(graphResult);
-    log.debug('feature', flatCoords(feature));
+    // log.debug('feature', flatCoords(feature));
 
     expect(flatCoords(feature)).toEqual([
       5, 0, 7, 0, 8, 0, 12, 0, 13, 0, 16, 0, 19, 0
+    ]);
+  });
+
+  test('meeting roads', () => {
+    const gpsPoints = [
+      // createPointFeature([4, 0]), // kpfzg pbxy
+      // [5, 0] kpgxc zbzu
+      createPointFeature([8, 0]), // kpvxy pcrv
+      // [10, 0] kpzpg xczb
+      createPointFeature([12, 0]), // krbxc pfpu
+      // [15, 0] krfxv rfxv
+      createPointFeature([16, 0]) // krgru pfzg
+    ];
+
+    const { mappedGpsPoints } = mapGpsToRoad(meetingRoads, gpsPoints, {
+      maxDistance: 1000
+    });
+
+    const graphResult = buildGraph(meetingRoads, mappedGpsPoints);
+
+    log.debug('graphResult', graphResult.path.map(hashToS));
+
+    // expect(graphResult.path.map(hashToS)).toEqual([
+    //   // 'pbxy',
+    //   // 'zbzu',
+    //   'pcrv',
+    //   'xczb',
+    //   'pfpu',
+    //   // 'rfxv',
+    //   'pfzg'
+    // ]);
+
+    const feature = graphToFeature(graphResult);
+    log.debug('feature', flatCoords(feature));
+
+    expect(flatCoords(feature)).toEqual([
+      // 4, 0, 5, 0, 8, 0, 10, 0, 12, 0, 15, 0, 16, 0
+      8, 0, 10, 0, 12, 0, 15, 0, 16, 0
     ]);
   });
 });
