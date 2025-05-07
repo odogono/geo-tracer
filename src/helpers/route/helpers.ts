@@ -1,8 +1,20 @@
-import { Position } from 'geojson';
+import { Feature, LineString, Position } from 'geojson';
 
 import { MappedGpsPointFeature, RoadFeature } from '@types';
 
+import { createPointHash } from '../hash';
 import { NodeMap, VisitContext } from './types';
+
+export const flatCoords = (feature: Feature<LineString> | undefined) =>
+  feature?.geometry.coordinates.flat().map(n => Number(n.toFixed(1)));
+
+export const hashCoords = (
+  feature: Feature<LineString> | undefined,
+  shorten: boolean = true
+) =>
+  feature?.geometry.coordinates
+    .map(p => createPointHash(p))
+    .map(h => (shorten ? h.slice(-4) : h));
 
 export const hashToS = (hash: string | undefined) => {
   if (!hash) {

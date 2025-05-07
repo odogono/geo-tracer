@@ -1,5 +1,4 @@
 import { bbox as turf_bbox } from '@turf/turf';
-import { Feature, LineString } from 'geojson';
 import { describe, expect, test } from 'vitest';
 
 import {
@@ -11,14 +10,11 @@ import { getRoadFeatureBBox } from '../../geo';
 import { createLog } from '../../log';
 import { buildGraph } from '../buildGraph';
 import { graphToFeature } from '../graphToFeature';
-import { hashToS } from '../helpers';
+import { flatCoords, hashCoords, hashToS } from '../helpers';
 import { mapGpsLineStringToRoad, mapGpsToRoad } from '../mapGpsToRoad';
 import { createPointFeature, createRoadFeature } from './helpers';
 
 const log = createLog('astar.test');
-
-const flatCoords = (feature: Feature<LineString> | undefined) =>
-  feature?.geometry.coordinates.flat().map(n => Number(n.toFixed(1)));
 
 const singleRoad = [
   createRoadFeature(
@@ -574,8 +570,31 @@ describe('scenarios', () => {
       gpsWalkAlongTwoLineStrings
     );
 
+    log.debug(
+      'mappedGpsPoints',
+      mappedGpsPoints.map(p => hashToS(p.properties.hash))
+    );
+
     const graphResult = buildGraph(roads, mappedGpsPoints);
 
     log.debug('graphResult', graphResult.path.map(hashToS));
+
+    expect(graphResult.path.map(hashToS)).toEqual([
+      'yzts',
+      'yztj',
+      'yzsy',
+      'yzub'
+    ]);
+
+    const feature = graphToFeature(graphResult);
+    log.debug('feature', hashCoords(feature));
+
+    expect(hashCoords(feature)).toEqual([
+      'yzts',
+      'yztk',
+      'yztj',
+      'yzsy',
+      'yzub'
+    ]);
   });
 });

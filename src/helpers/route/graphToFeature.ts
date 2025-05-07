@@ -109,9 +109,10 @@ export const graphToFeature = (
 
     log.debug('push tail?', {
       roadCoordsLength: roadCoords.length,
-      roadEndIndex
+      roadEndIndex,
+      tail: hashToS(tailNode.properties.hash)
     });
-    if (tailIndex + 1 < roadCoords.length) {
+    if (tailIndex < roadCoords.length) {
       log.debug(
         'tailCoords',
         // roadEndIndex,
