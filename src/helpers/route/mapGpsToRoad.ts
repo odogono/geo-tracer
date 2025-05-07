@@ -1,5 +1,5 @@
 import { nearestPointOnLine } from '@turf/nearest-point-on-line';
-import { Feature, Point } from 'geojson';
+import { Feature, FeatureCollection, LineString, Point } from 'geojson';
 
 import {
   CommonFeatureProperties,
@@ -12,6 +12,27 @@ import { createPointFeatureHash, createPointHash } from '../hash';
 
 type MapGpsToRoadOptions = {
   maxDistance?: number;
+};
+
+export const mapGpsLineStringToRoad = (
+  roads: RoadFeature[],
+  gps: FeatureCollection<LineString>,
+  options: MapGpsToRoadOptions = { maxDistance: 0.005 }
+) => {
+  const mappedGpsPoints: MappedGpsPointFeature[] = [];
+
+  for (const feature of gps.features) {
+    for (const coordinate of feature.geometry.coordinates) {
+      const nearest = findPointOnNearestRoad(roads, coordinate, options);
+      if (nearest) {
+        mappedGpsPoints.push(nearest);
+      }
+    }
+  }
+
+  return {
+    mappedGpsPoints
+  };
 };
 
 /**
