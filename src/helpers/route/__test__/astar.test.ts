@@ -27,6 +27,32 @@ const singleRoad = [
   )
 ];
 
+const reverseRoad = [
+  createRoadFeature(
+    [
+      [10, 0],
+      [5, 0],
+      [0, 0] // kpzpgxczb
+    ],
+    'road1',
+    'kpzpgxczb.7zzzzzzzz'
+  )
+];
+const longReverseRoad = [
+  createRoadFeature(
+    [
+      [20, 0],
+      [16, 0],
+      [12, 0],
+      [8, 0],
+      [4, 0],
+      [0, 0]
+    ],
+    'road1',
+    'kpzpgxczb.7zzzzzzzz'
+  )
+];
+
 const multiRoad = [
   ...singleRoad,
   createRoadFeature(
@@ -37,6 +63,41 @@ const multiRoad = [
     ],
     'road2',
     'kpzpgxczb.s1z0gs3y0'
+  )
+];
+
+const crossRoads = [
+  createRoadFeature(
+    [
+      [0, -10],
+      [0, 0]
+    ],
+    'road1',
+    '7ypzpgxcz.7zzzzzzzz'
+  ),
+  createRoadFeature(
+    [
+      [0, 0],
+      [0, 10]
+    ],
+    'road2',
+    '7zzzzzzzz.eczbzuryp'
+  ),
+  createRoadFeature(
+    [
+      [0, 0],
+      [-10, 0]
+    ],
+    'road3',
+    '7zzzzzzzz.7zbzurypz'
+  ),
+  createRoadFeature(
+    [
+      [0, 0],
+      [10, 0]
+    ],
+    'road4',
+    '7zzzzzzzz.kpzpgxczb'
   )
 ];
 
@@ -58,52 +119,17 @@ describe('Path finding', () => {
 });
 
 describe('cross roads', () => {
-  const roads = [
-    createRoadFeature(
-      [
-        [0, -10],
-        [0, 0]
-      ],
-      'road1',
-      '7ypzpgxcz.7zzzzzzzz'
-    ),
-    createRoadFeature(
-      [
-        [0, 0],
-        [0, 10]
-      ],
-      'road2',
-      '7zzzzzzzz.eczbzuryp'
-    ),
-    createRoadFeature(
-      [
-        [0, 0],
-        [-10, 0]
-      ],
-      'road3',
-      '7zzzzzzzz.7zbzurypz'
-    ),
-    createRoadFeature(
-      [
-        [0, 0],
-        [10, 0]
-      ],
-      'road4',
-      '7zzzzzzzz.kpzpgxczb'
-    )
-  ];
-
   test('north to south', () => {
     const gpsPoints = [
       createPointFeature([0, -10]), // rcpz
       createPointFeature([0, 10]) // xzbq
     ];
 
-    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
+    const { mappedGpsPoints } = mapGpsToRoad(crossRoads, gpsPoints, {
       maxDistance: 1000
     });
 
-    const { path } = buildGraph(roads, mappedGpsPoints);
+    const { path } = buildGraph(crossRoads, mappedGpsPoints);
 
     expect(path).toEqual(['7ypzpgxcz', '7zzzzzzzz', 'eczbzuryp']);
   });
@@ -114,11 +140,11 @@ describe('cross roads', () => {
       createPointFeature([10, 0]) // xzbq
     ];
 
-    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
+    const { mappedGpsPoints } = mapGpsToRoad(crossRoads, gpsPoints, {
       maxDistance: 1000
     });
 
-    const { path } = buildGraph(roads, mappedGpsPoints);
+    const { path } = buildGraph(crossRoads, mappedGpsPoints);
 
     expect(path).toEqual(['7ypzpgxcz', '7zzzzzzzz', 'kpzpgxczb']);
   });
@@ -130,11 +156,11 @@ describe('cross roads', () => {
       createPointFeature([0, 10]) // uryp
     ];
 
-    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
+    const { mappedGpsPoints } = mapGpsToRoad(crossRoads, gpsPoints, {
       maxDistance: 1000
     });
 
-    const { path } = buildGraph(roads, mappedGpsPoints);
+    const { path } = buildGraph(crossRoads, mappedGpsPoints);
 
     // log.debug(
     //   'path',
@@ -228,10 +254,42 @@ describe('multi-segment road', () => {
     const graphResult = buildGraph(multiRoad, mappedGpsPoints);
     const feature = graphToFeature(graphResult);
 
-    log.debug('graphResult', graphResult.path.map(hashToS));
+    // log.debug('graphResult', graphResult.path.map(hashToS));
     log.debug('feature', flatCoords(feature));
 
     expect(flatCoords(feature)).toEqual([5, 0, 10, 0, 10, 5]);
+  });
+
+  test('reverse road path', () => {
+    const gpsPoints = [
+      createPointFeature([5, 0]), // kpgxc zbzu
+      // [5,0] kpgxc zbzu
+      createPointFeature([7, 0]), // kpuzz rcpz
+      createPointFeature([13, 0]), // krcpz zfrc
+      createPointFeature([19, 0]) // krvxb rgru
+    ];
+
+    const { mappedGpsPoints } = mapGpsToRoad(longReverseRoad, gpsPoints, {
+      maxDistance: 1000
+    });
+
+    const graphResult = buildGraph(longReverseRoad, mappedGpsPoints);
+
+    log.debug('graphResult', graphResult.path.map(hashToS));
+
+    expect(graphResult.path.map(hashToS)).toEqual([
+      'zbzu',
+      'rcpz',
+      'zfrc',
+      'rgru'
+    ]);
+
+    const feature = graphToFeature(graphResult);
+    log.debug('feature', flatCoords(feature));
+
+    expect(flatCoords(feature)).toEqual([
+      5, 0, 7, 0, 8, 0, 12, 0, 13, 0, 16, 0, 19, 0
+    ]);
   });
 });
 

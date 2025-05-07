@@ -1,7 +1,8 @@
-import { MappedGpsPointFeature } from '@types';
+import { Position } from 'geojson';
 
-import { RoadFeature } from '../../types';
-import { NodeMap } from './types';
+import { MappedGpsPointFeature, RoadFeature } from '@types';
+
+import { NodeMap, VisitContext } from './types';
 
 export const hashToS = (hash: string | undefined) => {
   if (!hash) {
@@ -88,4 +89,89 @@ export const getLinkedNode = (
     return roadAStart;
   }
   return undefined;
+};
+
+export const getCommonRoad = (
+  context: VisitContext,
+  hashA: string,
+  hashB: string
+): RoadFeature | undefined => {
+  const { nodeMap, nodeRoadMap } = context;
+  const roadSetA = nodeRoadMap.get(hashA);
+  const roadSetB = nodeRoadMap.get(hashB);
+
+  if (!roadSetA || !roadSetB) {
+    console.error('roadSet not found', { hashA, hashB, roadSetA, roadSetB });
+    return undefined;
+  }
+
+  for (const roadHash of roadSetA) {
+    if (roadSetB.has(roadHash)) {
+      return nodeMap.get(roadHash) as RoadFeature;
+    }
+  }
+
+  const node = nodeMap.get(hashA) as MappedGpsPointFeature | undefined;
+  if (!node) {
+    console.error('node not found', hashA);
+    return undefined;
+  }
+
+  // fall-back to defined road
+  return getNodeRoad(nodeMap, node.properties.roadHash ?? node.properties.hash);
+};
+
+export const getRoadIndex = (
+  _context: VisitContext,
+  road: RoadFeature,
+  node: MappedGpsPointFeature
+) => {
+  const hash = node.properties.hash;
+  const roadHash = node.properties.roadHash;
+
+  // console.debug('[getRoadIndex]', {
+  //   hash,
+  //   index: node.properties.index,
+  //   road: road.properties.hash,
+  //   roadHash
+  // });
+
+  if (roadHash === road.properties.hash) {
+    return node.properties.index;
+  }
+
+  const [start, end] = getRoadNodeIds(road.properties.hash);
+
+  // console.debug('[getRoadIndex]', {
+  //   end,
+  //   start
+  // });
+
+  if (start === hash) {
+    return 0;
+  }
+
+  if (end === hash) {
+    return road.geometry.coordinates.length - 1;
+  }
+
+  return node.properties.index;
+};
+
+export const arePositionsEqual = (
+  pos1: Position | undefined,
+  pos2: Position | undefined
+): boolean => {
+  if (!pos1 || !pos2) {
+    return false;
+  }
+  if (pos1.length !== pos2.length) {
+    return false;
+  }
+  for (let i = 0; i < pos1.length; i++) {
+    if (pos1[i] !== pos2[i]) {
+      return false;
+    }
+  }
+  return true;
 };

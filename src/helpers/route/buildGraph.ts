@@ -19,6 +19,9 @@ export const buildGraph = (
 ) => {
   const nodeMap = new Map<string, MappedGpsPointFeature | RoadFeature>();
 
+  // a map of node hashes to the road hashes that contain them
+  const nodeRoadMap = new Map<string, Set<string>>();
+
   for (const road of roads) {
     const { hash } = road.properties;
     const [start, end] = getRoadNodeIds(hash);
@@ -26,11 +29,25 @@ export const buildGraph = (
     nodeMap.set(hash, road);
     nodeMap.set(start, road);
     nodeMap.set(end, road);
+    nodeRoadMap.set(start, new Set([hash]));
+    nodeRoadMap.set(end, new Set([hash]));
   }
 
   for (const gpsPoint of gpsPoints) {
-    const { hash } = gpsPoint.properties;
+    const { hash, roadHash } = gpsPoint.properties;
     nodeMap.set(hash, gpsPoint);
+    log.debug('adding gps point to nodeMap', hashToS(hash));
+
+    const roadHashes = nodeRoadMap.get(hash) ?? new Set<string>([roadHash]);
+
+    for (const road of roads) {
+      const { hash: roadHash } = road.properties;
+      const [roadStart, roadEnd] = getRoadNodeIds(roadHash);
+      if (roadStart === hash || roadEnd === hash) {
+        roadHashes.add(roadHash);
+      }
+    }
+    nodeRoadMap.set(hash, roadHashes);
   }
 
   const start = gpsPoints[0];
@@ -41,9 +58,10 @@ export const buildGraph = (
     currentHash: hash,
     gpsPoints,
     nodeMap,
+    nodeRoadMap,
     path: [hash],
-    roads,
-    visitedNodes: new Set<string>([hash])
+    roads
+    // visitedNodes: new Set<string>([hash])
   };
 
   const resultContext = visitNode(context);
