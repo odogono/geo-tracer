@@ -639,6 +639,92 @@ export const boxRoads: FeatureCollection<LineString> = {
   type: 'FeatureCollection'
 };
 
+export const separateRoads: FeatureCollection<LineString> = {
+  features: [
+    {
+      bbox: [-3.647_197_9, 50.794_112, -3.646_380_4, 50.794_694],
+      geometry: {
+        coordinates: [
+          [-3.647_197_9, 50.794_112],
+          [-3.646_977, 50.794_252_8],
+          [-3.646_741_6, 50.794_432_7],
+          [-3.646_380_4, 50.794_694]
+        ],
+        type: 'LineString'
+      },
+      id: '40',
+      properties: {
+        hash: 'gcj2vnb1n.gcj2vnbu9',
+        highway: 'unclassified',
+        length: 86.593_763_448_132_99,
+        name: 'Old Tiverton Road',
+        oneway: false,
+        osmid: 29_355_558,
+        reversed: false,
+        selected: false,
+        service: null,
+        street_count: null,
+        type: 'edge',
+        x: null,
+        y: null
+      },
+      type: 'Feature'
+    },
+    {
+      bbox: [-3.646_513_7, 50.794_420_6, -3.646_106_7, 50.794_575_7],
+      geometry: {
+        coordinates: [
+          [-3.646_106_7, 50.794_575_7],
+          [-3.646_358, 50.794_420_6],
+          [-3.646_513_7, 50.794_517_7]
+        ],
+        type: 'LineString'
+      },
+      id: '72',
+      properties: {
+        hash: 'gcj2vnbgz.gcj2vnbew',
+        highway: 'footway',
+        length: 40.059_809_872_466,
+        name: null,
+        oneway: false,
+        osmid: 176_300_538,
+        reversed: false,
+        selected: false,
+        service: null,
+        street_count: null,
+        type: 'edge',
+        x: null,
+        y: null
+      },
+      type: 'Feature'
+    }
+  ],
+  type: 'FeatureCollection'
+};
+
+export const gpsSeparateRoads: FeatureCollection<LineString> = {
+  features: [
+    {
+      geometry: {
+        coordinates: [
+          [-3.646_865_666_648_750_4, 50.794_314_849_512_176],
+          [-3.646_758_221_168_426, 50.794_400_078_552_8],
+          [-3.646_577_038_593_562_7, 50.794_489_302_537_9],
+          [-3.646_499_087_950_445_5, 50.794_482_644_037_49],
+          [-3.646_404_283_114_861_8, 50.794_430_707_701_31],
+          [-3.646_197_819_250_403_4, 50.794_481_312_337_21]
+        ],
+        type: 'LineString'
+      },
+      properties: {
+        type: 'route'
+      },
+      type: 'Feature'
+    }
+  ],
+  type: 'FeatureCollection'
+};
+
 export const scenarios: Scenario[] = [
   {
     gps: gpsWalkData,
@@ -664,5 +750,10 @@ export const scenarios: Scenario[] = [
     gps: gpsBoxRoads,
     id: 'scenario-five',
     roads: boxRoads
+  },
+  {
+    gps: gpsSeparateRoads,
+    id: 'scenario-six',
+    roads: separateRoads
   }
 ];

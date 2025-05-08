@@ -355,22 +355,61 @@ describe('buildGraph', () => {
     log.debug('feature', flatCoords(feature));
 
     // prettier-ignore
-    // expect(flatCoords(feature)).toEqual([
-    //   // ❌
-    //   0, 2,
-    //   0, 5,
-    //   0, 10,
-    //   0, 5,
-    //   6, 10
-    // ]);
-
-    // prettier-ignore
     expect(flatCoords(feature)).toEqual([
       0, 2, 
       0, 5, 
       0, 10, 
       5, 10, 
       6, 10
+    ]);
+  });
+
+  test.only('separate roads', () => {
+    const roads = [
+      createRoadFeature(
+        [
+          [0, 0],
+          [10, 0]
+        ],
+        'road1',
+        '7zzzzzzzz.kpzpgxczb'
+      ),
+      createRoadFeature(
+        [
+          [10, 20],
+          [20, 20]
+        ],
+        'road2',
+        's5x1g8cu2.s7w1z0gs3'
+      )
+    ];
+    // zzzz.xczb
+    // 8cu2.z0gs3
+
+    const gpsPoints = [
+      createPointFeature([2, 0]), // xbrg road1
+      createPointFeature([8, 0]), // pcrv road1
+      createPointFeature([10, 10]), // xczb
+      createPointFeature([12, 20]), // 11d2 road2
+      createPointFeature([18, 20]) // 95f6 road2
+    ];
+
+    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
+      maxDistance: 1000
+    });
+
+    // log.debug('mappedGpsPoints', mappedGpsPoints);
+
+    const graph = buildGraph(roads, mappedGpsPoints);
+
+    log.debug('graph', graph.path.map(hashToS));
+
+    expect(graph.path.map(hashToS)).toEqual([
+      'xbrg',
+      'pcrv',
+      '-',
+      '11d2',
+      '95f6'
     ]);
   });
 });

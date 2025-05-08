@@ -15,7 +15,7 @@ import {
 } from './helpers';
 import { NodeMap, VisitContext } from './types';
 
-const log = createLog('buildGraph', ['debug']);
+const log = createLog('buildGraph', ['']);
 
 export type BuildGraphOptions = {
   includeAllGpsPoints: boolean;
@@ -240,9 +240,15 @@ const visitNode = (context: VisitContext) => {
     );
 
     if (!joinNode) {
-      log.error(currentGpsIndex, 'no join node');
+      // no join node, means we are on unlinked roads, so start a new path
+      log.error(currentGpsIndex, 'no join node - new path');
       log.error(currentGpsIndex, 'nextRoadHash', hashToS(nextRoadHash));
-      return context;
+      // return context;
+      return visitNode({
+        ...context,
+        currentHash: nextHash,
+        path: [...context.path, '-']
+      });
     }
 
     if (joinNode === nextHash) {
