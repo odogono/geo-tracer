@@ -12,7 +12,7 @@ import {
 } from './helpers';
 import { VisitContext } from './types';
 
-const log = createLog('graphToFeature');
+const log = createLog('graphToFeature', ['']);
 
 export const graphToFeature = (
   graph: VisitContext
@@ -60,6 +60,9 @@ export const graphToFeature = (
       return undefined;
     }
 
+    // if (isNodeRoad(tailNode)) {
+    //   log.debug('tailNode is a road!!');
+    // }
     // get the road which both head and tail are on
     const roadNode = getCommonRoad(graph, head, tail);
 
@@ -70,6 +73,9 @@ export const graphToFeature = (
       });
       return undefined;
     }
+
+    log.debug('roadNode', hashToS(roadNode.properties.hash));
+    log.debug('tailNode', hashToS(tailNode.properties.hash));
 
     const headIndex = getRoadIndex(graph, roadNode, headNode, head);
     // const tailIndex = tailNode.properties.index;
@@ -84,7 +90,8 @@ export const graphToFeature = (
     const roadCoords = roadNode.geometry.coordinates;
     // log.debug('tailNode', tailNode);
 
-    const tailIndex = tailNode.properties.index ?? roadCoords.length;
+    // const tailIndex = tailNode.properties.index ?? roadCoords.length;
+    const tailIndex = getRoadIndex(graph, roadNode, tailNode, tail);
 
     log.debug('headIndex', headIndex + 1, hashToS(roadNode.properties.hash));
     log.debug('tailIndex', tailIndex + 1, hashToS(tailNode.properties.hash));
@@ -117,11 +124,21 @@ export const graphToFeature = (
         'tailCoords',
         // roadEndIndex,
         // roadCoords.length,
-        tailNode.geometry.coordinates,
-        coordinates.at(-1)
+        tailNode.geometry.coordinates
+        // coordinates.at(-1)
       );
 
+      // if (isNodeRoad(tailNode)) {
+      //   log.debug('tailNode is a road!!');
+      //   pushCoords(
+      //     coordinates,
+      //     (tailNode as RoadFeature).geometry.coordinates[0]
+      //   );
+      // } else {
       pushCoords(coordinates, tailNode.geometry.coordinates);
+      // }
+
+      // pushCoords(coordinates, tailNode.geometry.coordinates);
     }
   }
 
@@ -140,6 +157,10 @@ export const graphToFeature = (
 };
 
 const pushCoords = (coordinates: Position[], ...coords: Position[]) => {
+  // log.debug('🎉 pushCoords', coords);
+  // if (coords.length === 1 && coords[0].length > 1) {
+  //   coords = coords[0];
+  // }
   for (const coord of coords) {
     if (arePositionsEqual(coordinates.at(-1), coord)) {
       continue;

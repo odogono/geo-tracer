@@ -3,6 +3,8 @@ import { describe, expect, test } from 'vitest';
 
 import {
   gpsWalkAlongTwoLineStrings,
+  gpsWalkThreeRoadJunction,
+  threeRoadJunction,
   twoLineStrings
 } from '../../../components/feature-canvas/data';
 import { RoadFeature } from '../../../types';
@@ -570,31 +572,117 @@ describe('scenarios', () => {
       gpsWalkAlongTwoLineStrings
     );
 
-    log.debug(
-      'mappedGpsPoints',
-      mappedGpsPoints.map(p => hashToS(p.properties.hash))
-    );
+    // log.debug(
+    //   'mappedGpsPoints',
+    //   mappedGpsPoints.map(p => hashToS(p.properties.hash))
+    // );
 
     const graphResult = buildGraph(roads, mappedGpsPoints);
 
-    log.debug('graphResult', graphResult.path.map(hashToS));
+    // log.debug('graphResult', graphResult.path.map(hashToS));
 
     expect(graphResult.path.map(hashToS)).toEqual([
       'yzts',
       'yztj',
       'yzsy',
-      'yzub'
+      'yzub',
+      'yzvn'
     ]);
 
     const feature = graphToFeature(graphResult);
-    log.debug('feature', hashCoords(feature));
+    // log.debug('feature', hashCoords(feature));
 
     expect(hashCoords(feature)).toEqual([
       'yzts',
       'yztk',
       'yztj',
       'yzsy',
-      'yzub'
+      'yzub',
+      'yzv4',
+      'yzvn'
+    ]);
+  });
+
+  test('scenario 4', () => {
+    // yzhn.yygz 2 1 0
+    // yzhn.yz40 0 1 2
+    const roads = threeRoadJunction.features as RoadFeature[];
+
+    const { mappedGpsPoints } = mapGpsLineStringToRoad(
+      roads,
+      gpsWalkThreeRoadJunction
+    );
+    // yz5b
+    // yzhj
+    // yz5w
+
+    const graphResult = buildGraph(roads, mappedGpsPoints);
+
+    log.debug('graphResult', graphResult.path.map(hashToS));
+
+    expect(graphResult.path.map(hashToS)).toEqual([
+      'yz5b',
+      'yzhj',
+      'yzhn',
+      'yz5w'
+    ]);
+
+    const feature = graphToFeature(graphResult);
+    log.debug('feature', hashCoords(feature));
+  });
+
+  test('scenario 4 analog', () => {
+    const roads = [
+      createRoadFeature(
+        [
+          [0, 0], // zzzz
+          // [-5, 0], //
+          [-10, 0] // rypz
+        ],
+        'road1'
+      ),
+      createRoadFeature(
+        [
+          [0, 0], // zzzz
+          // [0, 5],
+          [0, 10] // uryp
+        ],
+        'road2'
+      )
+    ];
+
+    const gpsPoints = [
+      createPointFeature([-8, 0]), // zyxf
+      createPointFeature([-2, 0]), // rzxu
+      createPointFeature([0, 8]) // brgr
+    ];
+
+    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
+      maxDistance: 1000
+    });
+
+    // log.debug('mappedGpsPoints', mappedGpsPoints);
+
+    const graphResult = buildGraph(roads, mappedGpsPoints);
+
+    log.debug('graphResult', graphResult.path.map(hashToS));
+
+    expect(graphResult.path.map(hashToS)).toEqual([
+      'zyxf',
+      'rzxu',
+      'zzzz',
+      'brgr'
+    ]);
+
+    const feature = graphToFeature(graphResult);
+    log.debug('feature', feature);
+    log.debug('feature', flatCoords(feature));
+    log.debug('feature', hashCoords(feature));
+
+    expect(flatCoords(feature)).toEqual([
+      -8, 0, -2, 0, 0, 0, 0, 8
+      // -8, 0, -5, 0, -2, 0, 0, 0, 0, 5, 0, 8
+      // -8, 0, -5, 0, -2, 0, -5, 0, -10, 0, 0, 5, 0, 8
     ]);
   });
 });

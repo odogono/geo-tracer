@@ -84,6 +84,36 @@ export const getNodeRoad = (
   return map.get(node.properties.roadHash) as RoadFeature | undefined;
 };
 
+export const createRoadPointFeature = (
+  road: RoadFeature,
+  hash: string
+): MappedGpsPointFeature => {
+  const [start, end] = getRoadNodeIds(road.properties.hash);
+
+  const isStart = start === hash;
+
+  const index = isStart ? 0 : road.geometry.coordinates.length - 1;
+
+  const coordinates = road.geometry.coordinates[index];
+
+  return {
+    geometry: {
+      coordinates,
+      type: 'Point'
+    },
+    properties: {
+      dist: 0,
+      hash,
+      index,
+      location: 0,
+      multiFeatureIndex: 0,
+      roadHash: road.properties.hash,
+      srcHash: isStart ? end : start
+    },
+    type: 'Feature'
+  };
+};
+
 export const getNodeRoadFromStartEnd = (
   map: NodeMap,
   start: string,
@@ -167,14 +197,14 @@ export const getRoadIndex = (
 
   if (isNodeRoad(node)) {
     const [start, end] = getRoadNodeIds(hash);
-    console.debug('[getRoadIndex] road node', {
-      end,
-      hash: nodeHash,
-      start
-      //   index: node.properties.index,
-      //   road: road.properties.hash,
-      //   roadHash: node.properties.roadHash
-    });
+    // console.debug('[getRoadIndex] road node', {
+    //   end,
+    //   hash: nodeHash,
+    //   start
+    //   //   index: node.properties.index,
+    //   //   road: road.properties.hash,
+    //   //   roadHash: node.properties.roadHash
+    // });
     if (start === nodeHash) {
       return 0;
     }

@@ -2,6 +2,7 @@ import { MappedGpsPointFeature, RoadFeature } from '@types';
 
 import { createLog } from '../log';
 import {
+  createRoadPointFeature,
   doesRoadHashContainNode,
   getLinkedNode,
   getNodeGpsPoint,
@@ -35,9 +36,12 @@ export const buildGraph = (
     const { hash } = road.properties;
     const [start, end] = getRoadNodeIds(hash);
     log.debug('adding road to nodeMap', hashToS(hash));
+
     nodeMap.set(hash, road);
-    nodeMap.set(start, road);
-    nodeMap.set(end, road);
+
+    nodeMap.set(start, createRoadPointFeature(road, start));
+    nodeMap.set(end, createRoadPointFeature(road, end));
+
     nodeRoadMap.set(start, new Set([hash]));
     nodeRoadMap.set(end, new Set([hash]));
   }
