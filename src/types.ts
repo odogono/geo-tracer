@@ -33,7 +33,9 @@ export type FeatureCollections = {
 
 export type FeatureCollectionWithProps = FeatureCollection & {
   properties: {
+    color?: string;
     name: string;
+    strokeWidth?: number;
   };
 };
 

@@ -100,6 +100,8 @@ export const MapView = () => {
       return;
     }
 
+    // deselect all features
+
     // Find features that intersect with the selection box
     const newSelectedFeatures = currentCollection.features.filter(feature => {
       if (feature.properties?.type === 'cycle') {
@@ -142,6 +144,7 @@ export const MapView = () => {
     setFeatureCollections(newFeatureCollections);
 
     // Highlight all selected features
+    setHighlightedFeature(null);
     if (newSelectedFeatures.length > 0) {
       const lastSelectedFeature = newSelectedFeatures.at(-1);
       if (lastSelectedFeature) {

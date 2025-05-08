@@ -5,6 +5,9 @@ import { Layer, Source } from 'react-map-gl/maplibre';
 import { useTheme } from '@contexts/theme/context';
 import { useWorld } from '@contexts/world/use-world';
 import { isLineStringFeature, isPointFeature } from '@helpers/geo';
+import { createLog } from '@helpers/log';
+
+const log = createLog('mapLayers');
 
 // Define colors for different feature collections
 const COLLECTION_COLORS = [
@@ -74,6 +77,11 @@ export const MapLayers: React.FC<MapLayersProps> = ({
     <>
       {/* Render each feature collection with a different color */}
       {featureCollections.map((collection, index) => {
+        log.debug(
+          'rendering collection',
+          collection.properties?.name,
+          collection.properties
+        );
         // Separate LineString and Point features for this collection
         const lineFeatures = collection.features.filter(
           feature => feature?.geometry?.type === 'LineString'
@@ -96,7 +104,16 @@ export const MapLayers: React.FC<MapLayersProps> = ({
 
         // Get color for this collection
         const collectionColor =
+          collection.properties?.color ??
           COLLECTION_COLORS[index % COLLECTION_COLORS.length];
+
+        log.debug(
+          'collectionColor',
+          collection.properties?.name,
+          collectionColor
+        );
+
+        const collectionStrokeWidth = collection.properties?.strokeWidth ?? 3;
 
         return (
           <React.Fragment key={`collection-${index}`}>
@@ -114,8 +131,8 @@ export const MapLayers: React.FC<MapLayersProps> = ({
                   'line-width': [
                     'case',
                     ['get', 'selected'],
-                    5, // Selected width
-                    3 // Default width
+                    collectionStrokeWidth + 2, // Selected width
+                    collectionStrokeWidth // Default width
                   ]
                 }}
                 type="line"
