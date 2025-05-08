@@ -121,7 +121,7 @@ export const singleLineStringWithVariations: FeatureCollection<LineString> = {
   type: 'FeatureCollection'
 };
 
-const gpsWalkAlongTwoLineStrings: FeatureCollection<LineString> = {
+export const gpsWalkAlongTwoLineStrings: FeatureCollection<LineString> = {
   features: [
     {
       geometry: {
@@ -435,7 +435,7 @@ export const gpsWalkThreeRoadJunction: FeatureCollection<LineString> = {
       geometry: {
         coordinates: [
           [-3.648_817_697_269_919_3, 50.794_611_028_238_31],
-          [-3.648_561_226_260_682, 50.794_635_795_936_586],
+          [-3.648_590_226_260_682, 50.794_635_795_936_586], // gcj2uyzhn gcj2uyzhnq
           [-3.648_530_354_751_244_4, 50.794_626_789_502_67],
           [-3.648_517_293_727_366, 50.794_520_963_770_68],
           [-3.648_550_539_969_619_4, 50.794_454_916_384_325]
@@ -476,7 +476,7 @@ export const threeRoadJunction: FeatureCollection<LineString> = {
       bbox: [-3.648_834_9, 50.794_596, -3.648_551_6, 50.794_623_1],
       geometry: {
         coordinates: [
-          [-3.648_551_6, 50.794_623_1],
+          [-3.648_551_6, 50.794_623_1], // gcj2uyzhn gcj2uyzhns
           [-3.648_697_2, 50.794_603],
           [-3.648_834_9, 50.794_596]
         ],
