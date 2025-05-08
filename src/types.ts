@@ -57,6 +57,7 @@ export type MappedGpsPointFeature = Feature<Point, MappedGpsPointProperties>;
 type MappedGpsPointProperties = CommonFeatureProperties & {
   dist: number; // distance between pt and the closest point
   index: number; // closest point was found on nth line part
+  isRoadPoint?: boolean; // whether this is actually a road point
   location: number; // distance along the line between start and the closest point
   multiFeatureIndex: number; // closest point was found on the nth line of the `MultiLineString`
   roadHash: string;

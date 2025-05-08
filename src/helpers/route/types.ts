@@ -8,6 +8,7 @@ export type VisitContext = {
   currentGpsIndex: number;
   currentHash: string;
   gpsPoints: MappedGpsPointFeature[];
+  includeAllGpsPoints: boolean;
   nodeMap: NodeMap;
   nodeRoadMap: NodeRoadMap;
   path: string[];

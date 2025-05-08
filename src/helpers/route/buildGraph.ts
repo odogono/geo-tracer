@@ -10,21 +10,22 @@ import {
   getNodeRoadHash,
   getRoadByStartEnd,
   getRoadNodeIds,
-  hashToS
+  hashToS,
+  isNodeRoadPoint
 } from './helpers';
 import { NodeMap, VisitContext } from './types';
 
-const log = createLog('buildGraph');
+const log = createLog('buildGraph', ['debug']);
 
 export type BuildGraphOptions = {
-  includeGpsPoints: boolean;
+  includeAllGpsPoints: boolean;
 };
 
 export const buildGraph = (
   roads: RoadFeature[],
   gpsPoints: MappedGpsPointFeature[],
   options: BuildGraphOptions = {
-    includeGpsPoints: true
+    includeAllGpsPoints: true
   }
 ) => {
   const nodeMap = new Map<string, MappedGpsPointFeature | RoadFeature>();
@@ -41,13 +42,26 @@ export const buildGraph = (
 
     nodeMap.set(start, createRoadPointFeature(road, start));
     nodeMap.set(end, createRoadPointFeature(road, end));
-
-    nodeRoadMap.set(start, new Set([hash]));
-    nodeRoadMap.set(end, new Set([hash]));
   }
+  const roadHashes = roads.map(r => r.properties.hash);
+
+  // cycle over the roads again to associate fully the nodeRoadMap
+  for (const roadHash of roadHashes) {
+    const [start, end] = getRoadNodeIds(roadHash);
+    const startSet = nodeRoadMap.get(start) ?? new Set<string>();
+    const endSet = nodeRoadMap.get(end) ?? new Set<string>();
+    startSet.add(roadHash);
+    endSet.add(roadHash);
+    nodeRoadMap.set(start, startSet);
+    nodeRoadMap.set(end, endSet);
+  }
+
+  // log.debug('nodeRoadMap', nodeRoadMap);
 
   for (const gpsPoint of gpsPoints) {
     const { hash, roadHash } = gpsPoint.properties;
+    const isRoadPoint = isNodeRoadPoint(nodeMap, hash);
+    gpsPoint.properties.isRoadPoint = isRoadPoint;
     nodeMap.set(hash, gpsPoint);
     log.debug('adding gps point to nodeMap', hashToS(hash));
 
@@ -70,11 +84,11 @@ export const buildGraph = (
     currentGpsIndex: 0,
     currentHash: hash,
     gpsPoints,
+    includeAllGpsPoints: options.includeAllGpsPoints,
     nodeMap,
     nodeRoadMap,
     path: [hash],
     roads
-    // visitedNodes: new Set<string>([hash])
   };
 
   const resultContext = visitNode(context);
@@ -86,61 +100,14 @@ export const buildGraph = (
   return healedContext;
 };
 
-/**
- * Removes nodes from the path that appear to be redundant
- *
- * @param context
- * @returns
- */
-const healPath = (context: VisitContext) => {
-  const { nodeMap, path } = context;
-  let healedPath = [...path];
-  let hasChanges = true;
-
-  // Keep iterating until no more changes are made
-  while (hasChanges) {
-    hasChanges = false;
-    const newPath: string[] = [];
-
-    for (let i = 0; i < healedPath.length; i++) {
-      const prevNode = healedPath[i - 1];
-      const currentNode = healedPath[i];
-      const nextNode = healedPath[i + 1];
-
-      // If we find a node that has the same node on both sides, skip it
-      if (prevNode && nextNode && prevNode === nextNode) {
-        const point = nodeMap.get(currentNode);
-        const road = getNodeRoad(nodeMap, currentNode);
-
-        log.debug(
-          'redundant node',
-          hashToS(currentNode),
-          hashToS(prevNode),
-          hashToS(nextNode),
-          point
-        );
-        log.debug('road', road);
-
-        hasChanges = true;
-        // remove the last entry
-        newPath.pop();
-        continue;
-      }
-
-      newPath.push(currentNode);
-    }
-
-    healedPath = newPath;
-  }
-
-  return {
-    ...context,
-    path: healedPath
-  };
-};
-
 const visitNode = (context: VisitContext) => {
-  const { currentGpsIndex, currentHash, gpsPoints, nodeMap } = context;
+  const {
+    currentGpsIndex,
+    currentHash,
+    gpsPoints,
+    includeAllGpsPoints,
+    nodeMap
+  } = context;
 
   const currentNode = nodeMap.get(currentHash);
 
@@ -188,13 +155,13 @@ const visitNode = (context: VisitContext) => {
   );
 
   if (getRoadByStartEnd(context, currentHash, nextHash)) {
-    log.debug(
-      currentGpsIndex,
-      'direct path from',
-      hashToS(currentHash),
-      'to',
-      hashToS(nextHash)
-    );
+    // log.debug(
+    //   currentGpsIndex,
+    //   'direct path from',
+    //   hashToS(currentHash),
+    //   'to',
+    //   hashToS(nextHash)
+    // );
     return visitNode({
       ...context,
       currentGpsIndex: currentGpsIndex + 1,
@@ -216,13 +183,23 @@ const visitNode = (context: VisitContext) => {
     //   return context;
     // }
 
-    log.debug(currentGpsIndex, 'adding to path', hashToS(nextHash));
+    const isRoadPoint = isNodeRoadPoint(nodeMap, nextHash);
 
+    const addPoint =
+      includeAllGpsPoints ||
+      isRoadPoint ||
+      currentGpsIndex + 1 === gpsPoints.length - 1;
+
+    log.debug(currentGpsIndex, `adding ${hashToS(nextHash)} to path`);
+
+    const path = addPoint ? [...context.path, nextHash] : context.path;
+
+    // const path = [...context.path, nextHash];
     return visitNode({
       ...context,
       currentGpsIndex: currentGpsIndex + 1,
       currentHash: nextHash,
-      path: [...context.path, nextHash]
+      path
     });
   } else {
     const nextRoad = nodeMap.get(nextRoadHash); // findNextRoad(nodeMap, currentHash, nextHash);
@@ -286,6 +263,59 @@ const visitNode = (context: VisitContext) => {
       path: [...context.path, joinNode]
     });
   }
+};
+
+/**
+ * Removes nodes from the path that appear to be redundant
+ *
+ * @param context
+ * @returns
+ */
+const healPath = (context: VisitContext) => {
+  const { nodeMap, path } = context;
+  let healedPath = [...path];
+  let hasChanges = true;
+
+  // Keep iterating until no more changes are made
+  while (hasChanges) {
+    hasChanges = false;
+    const newPath: string[] = [];
+
+    for (let i = 0; i < healedPath.length; i++) {
+      const prevNode = healedPath[i - 1];
+      const currentNode = healedPath[i];
+      const nextNode = healedPath[i + 1];
+
+      // If we find a node that has the same node on both sides, skip it
+      if (prevNode && nextNode && prevNode === nextNode) {
+        const point = nodeMap.get(currentNode);
+        const road = getNodeRoad(nodeMap, currentNode);
+
+        log.debug(
+          'redundant node',
+          hashToS(currentNode),
+          hashToS(prevNode),
+          hashToS(nextNode),
+          point
+        );
+        log.debug('road', road);
+
+        hasChanges = true;
+        // remove the last entry
+        newPath.pop();
+        continue;
+      }
+
+      newPath.push(currentNode);
+    }
+
+    healedPath = newPath;
+  }
+
+  return {
+    ...context,
+    path: healedPath
+  };
 };
 
 const getJoinNode = (

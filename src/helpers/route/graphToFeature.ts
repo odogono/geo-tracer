@@ -12,7 +12,7 @@ import {
 } from './helpers';
 import { VisitContext } from './types';
 
-const log = createLog('graphToFeature', ['']);
+const log = createLog('graphToFeature', ['debug']);
 
 export const graphToFeature = (
   graph: VisitContext
@@ -36,6 +36,8 @@ export const graphToFeature = (
 
     log.debug('head', hashToS(head));
     log.debug('tail', hashToS(tail));
+
+    // const isDebug = hashToS(head) === 'uryp' && hashToS(tail) === 't911';
 
     const road = getNodeRoadFromStartEnd(nodeMap, head, tail);
 
@@ -97,7 +99,7 @@ export const graphToFeature = (
     log.debug('tailIndex', tailIndex + 1, hashToS(tailNode.properties.hash));
 
     if (ii === 0) {
-      log.debug('headCoords', headNode.geometry.coordinates);
+      // log.debug('headCoords', headNode.geometry.coordinates);
       pushCoords(coordinates, headNode.geometry.coordinates);
     }
 
@@ -107,7 +109,17 @@ export const graphToFeature = (
     const roadEndIndex = Math.max(headIndex + 1, tailIndex + 1);
 
     const sliceCoords = roadCoords.slice(roadStartIndex, roadEndIndex);
-    log.debug('sliceCoords', { isReverse }, sliceCoords);
+    log.debug(
+      'sliceCoords',
+      hashToS(roadNode.properties.hash),
+      {
+        isReverse,
+        roadEndIndex,
+        roadLength: roadCoords.length,
+        roadStartIndex
+      },
+      sliceCoords
+    );
 
     if (isReverse) {
       sliceCoords.reverse();

@@ -50,7 +50,9 @@ export const useScenario = (scenarioId: string) => {
 
     const { mappedGpsPoints } = mapGpsLineStringToRoad(roads, gpsFC);
 
-    const graphResult = buildGraph(roads, mappedGpsPoints);
+    const graphResult = buildGraph(roads, mappedGpsPoints, {
+      includeAllGpsPoints: false
+    });
     const feature = graphToFeature(graphResult);
 
     if (!feature) {

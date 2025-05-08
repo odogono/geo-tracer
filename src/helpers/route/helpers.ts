@@ -64,6 +64,18 @@ export const getNodeRoadHash = (
 export const getNodeGpsPoint = (node: MappedGpsPointFeature | RoadFeature) =>
   isNodeGpsPoint(node) ? node.properties.hash : undefined;
 
+export const isNodeRoadPoint = (nodeMap: NodeMap, hash: string): boolean => {
+  const node = nodeMap.get(hash);
+  if (!node) {
+    return false;
+  }
+  if (!isNodeGpsPoint(node)) {
+    return false;
+  }
+
+  return node.properties.isRoadPoint ?? false;
+};
+
 export const getNodeRoad = (
   map: NodeMap,
   nodeHash: string | undefined
@@ -105,6 +117,7 @@ export const createRoadPointFeature = (
       dist: 0,
       hash,
       index,
+      isRoadPoint: true,
       location: 0,
       multiFeatureIndex: 0,
       roadHash: road.properties.hash,
@@ -167,7 +180,7 @@ export const getCommonRoad = (
   const roadSetB = nodeRoadMap.get(hashB);
 
   if (!roadSetA || !roadSetB) {
-    console.error('roadSet not found', { hashA, hashB, roadSetA, roadSetB });
+    // console.error('roadSet not found', { hashA, hashB, roadSetA, roadSetB });
     return undefined;
   }
 
@@ -179,7 +192,6 @@ export const getCommonRoad = (
 
   const node = nodeMap.get(hashA) as MappedGpsPointFeature | undefined;
   if (!node) {
-    console.error('node not found', hashA);
     return undefined;
   }
 
