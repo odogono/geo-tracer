@@ -27,8 +27,13 @@ export const FeatureCanvas = ({ scenarioId }: FeatureCanvasProps) => {
   );
   const [error, setError] = useState<string | null>(null);
 
-  const { bbox: scenarioBbox, featureCollections: scenarioFeatureCollections } =
-    useScenario(scenarioId);
+  const {
+    bbox: scenarioBbox,
+    featureCollections: scenarioFeatureCollections,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp
+  } = useScenario(scenarioId);
 
   // log.debug('scenarioFeatureCollections', scenarioFeatureCollections);
 
@@ -146,6 +151,9 @@ export const FeatureCanvas = ({ scenarioId }: FeatureCanvasProps) => {
         <canvas
           className="w-full h-full"
           height={dimensions.height}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
           ref={canvasRef}
           style={{
             height: dimensions.height / (window.devicePixelRatio || 1),
