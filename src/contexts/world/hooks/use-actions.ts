@@ -81,22 +81,31 @@ export const useActions = ({ featureCollections }: UseActionsProps) => {
 
     const graphResult = buildGraph(roads, mappedGpsPoints);
 
-    const feature = graphToFeature(graphResult);
+    const computedCollection = graphToFeature(graphResult) as
+      | FeatureCollectionWithProps
+      | undefined;
 
-    if (!feature) {
-      log.error('No feature found');
+    if (!computedCollection) {
+      log.error('No route feature found');
       return;
     }
 
-    const computedCollection: FeatureCollectionWithProps = {
-      features: [feature],
-      properties: {
-        color: '#fff',
-        name: 'computed',
-        strokeWidth: 10
-      },
-      type: 'FeatureCollection'
+    computedCollection.properties = {
+      ...computedCollection.properties,
+      color: '#fff',
+      name: 'computed',
+      strokeWidth: 10
     };
+
+    // const computedCollection: FeatureCollectionWithProps = {
+    //   features: [feature],
+    //   properties: {
+    //     color: '#fff',
+    //     name: 'computed',
+    //     strokeWidth: 10
+    //   },
+    //   type: 'FeatureCollection'
+    // };
 
     // log.debug('feature', hashCoords(feature));
 

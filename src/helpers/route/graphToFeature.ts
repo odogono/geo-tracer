@@ -12,7 +12,7 @@ import {
 } from './helpers';
 import { VisitContext } from './types';
 
-const log = createLog('graphToFeature', ['']);
+const log = createLog('graphToFeature', ['debug', 'error']);
 
 export const graphToFeature = (
   graph: VisitContext

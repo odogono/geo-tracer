@@ -2,10 +2,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { CodeIcon, RouteIcon } from 'lucide-react';
 
+import { createLog } from '@helpers/log';
+
 import { renderFeatureCollection } from './canvas';
+import { LayerToggles } from './components/layer-toggles';
 import { data as initialData } from './data';
 import { useDimensions } from './hooks/use-dimensions';
 import { useScenario } from './hooks/use-scenario';
+
+const log = createLog('FeatureCanvas');
 
 export type FeatureCanvasProps = {
   scenarioId: string;
@@ -24,6 +29,8 @@ export const FeatureCanvas = ({ scenarioId }: FeatureCanvasProps) => {
 
   const { bbox: scenarioBbox, featureCollections: scenarioFeatureCollections } =
     useScenario(scenarioId);
+
+  // log.debug('scenarioFeatureCollections', scenarioFeatureCollections);
 
   const [selectedFeatureCollections, setSelectedFeatureCollections] = useState<
     number[]
@@ -72,9 +79,11 @@ export const FeatureCanvas = ({ scenarioId }: FeatureCanvasProps) => {
 
     for (let ii = 0; ii < scenarioFeatureCollections.length; ii++) {
       const featureCollection = scenarioFeatureCollections[ii];
-      if (!selectedFeatureCollections.includes(ii)) {
+      if (!featureCollection || !selectedFeatureCollections.includes(ii)) {
         continue;
       }
+
+      // console.debug('rendering featureCollection', featureCollection);
       renderFeatureCollection({
         bbox: scenarioBbox,
         canvas,
@@ -113,18 +122,11 @@ export const FeatureCanvas = ({ scenarioId }: FeatureCanvasProps) => {
         )}
       </button>
 
-      <div className="absolute top-2 left-2 bg-white text-black px-2 py-1 rounded shadow hover:bg-gray-100 z-10">
-        <div className="flex flex-row gap-2">
-          {scenarioFeatureCollections.map((_fc, index) => (
-            <input
-              checked={selectedFeatureCollections.includes(index)}
-              key={index}
-              onChange={() => handleFeatureCollectionChange(index)}
-              type="checkbox"
-            />
-          ))}
-        </div>
-      </div>
+      <LayerToggles
+        featureCollections={scenarioFeatureCollections}
+        onChange={handleFeatureCollectionChange}
+        selected={selectedFeatureCollections}
+      />
 
       {isTextView ? (
         <div className="w-full h-full p-4">

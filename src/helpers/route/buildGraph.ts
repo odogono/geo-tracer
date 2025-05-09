@@ -15,11 +15,13 @@ import {
 } from './helpers';
 import { NodeMap, VisitContext } from './types';
 
-const log = createLog('buildGraph', ['']);
+const log = createLog('buildGraph', ['debug', 'error']);
 
 export type BuildGraphOptions = {
   includeAllGpsPoints: boolean;
 };
+
+const PATH_BREAK = '-';
 
 export const buildGraph = (
   roads: RoadFeature[],
@@ -184,13 +186,17 @@ const visitNode = (context: VisitContext) => {
     // }
 
     const isRoadPoint = isNodeRoadPoint(nodeMap, nextHash);
+    const isStartOfPath = context.path.at(-1) === PATH_BREAK;
 
     const addPoint =
       includeAllGpsPoints ||
       isRoadPoint ||
+      isStartOfPath ||
       currentGpsIndex + 1 === gpsPoints.length - 1;
 
-    log.debug(currentGpsIndex, `adding ${hashToS(nextHash)} to path`);
+    log.debug(currentGpsIndex, `adding ${hashToS(nextHash)} to path`, {
+      addPoint
+    });
 
     const path = addPoint ? [...context.path, nextHash] : context.path;
 
@@ -243,11 +249,17 @@ const visitNode = (context: VisitContext) => {
       // no join node, means we are on unlinked roads, so start a new path
       log.error(currentGpsIndex, 'no join node - new path');
       log.error(currentGpsIndex, 'nextRoadHash', hashToS(nextRoadHash));
-      // return context;
+
+      // do we need to add the current point to the path?
+      const path = includeAllGpsPoints
+        ? [...context.path, PATH_BREAK]
+        : [...context.path, currentHash, PATH_BREAK];
+      // if (context.path.at(-1))
+
       return visitNode({
         ...context,
         currentHash: nextHash,
-        path: [...context.path, '-']
+        path
       });
     }
 

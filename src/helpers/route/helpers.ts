@@ -34,7 +34,6 @@ export const hashCoords = (
     );
   }
   return feature.geometry.coordinates
-    .flat()
     .map(p => createPointHash(p))
     .map(h => (shorten ? h.slice(-4) : h));
 };

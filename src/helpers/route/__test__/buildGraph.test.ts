@@ -400,7 +400,9 @@ describe('buildGraph', () => {
 
     // log.debug('mappedGpsPoints', mappedGpsPoints);
 
-    const graph = buildGraph(roads, mappedGpsPoints);
+    const graph = buildGraph(roads, mappedGpsPoints, {
+      includeAllGpsPoints: false
+    });
 
     log.debug('graph', graph.path.map(hashToS));
 

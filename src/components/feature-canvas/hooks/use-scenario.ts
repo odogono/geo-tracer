@@ -50,28 +50,6 @@ export const useScenario = (scenarioId: string) => {
 
     const { mappedGpsPoints } = mapGpsLineStringToRoad(roads, gpsFC);
 
-    const graphResult = buildGraph(roads, mappedGpsPoints, {
-      includeAllGpsPoints: false
-    });
-    const feature = graphToFeature(graphResult);
-
-    if (!feature) {
-      return [
-        mappedGpsPoints,
-        { features: [], properties: {}, type: 'FeatureCollection' }
-      ];
-    }
-
-    const result: FeatureCollectionWithProperties<LineString> = {
-      features: [feature],
-      properties: {
-        color: '#F0F',
-        showIndexes: true,
-        strokeWidth: 4
-      },
-      type: 'FeatureCollection'
-    };
-
     const nodesFC: FeatureCollectionWithProperties<Point> = {
       ...gpsFC,
       features: mappedGpsPoints,
@@ -80,7 +58,44 @@ export const useScenario = (scenarioId: string) => {
       }
     };
 
-    return [nodesFC, result];
+    const graphResult = buildGraph(roads, mappedGpsPoints, {
+      includeAllGpsPoints: false
+    });
+    const graphFeatureCollection = graphToFeature(
+      graphResult
+    ) as FeatureCollectionWithProperties<LineString>;
+
+    if (!graphFeatureCollection) {
+      return [nodesFC];
+    }
+
+    graphFeatureCollection.properties = {
+      color: '#F0F',
+      showIndexes: true,
+      strokeWidth: 4
+    };
+
+    // const result: FeatureCollectionWithProperties<LineString> = {
+    //   features: [feature],
+    //   properties: {
+    //     color: '#F0F',
+    //     showIndexes: true,
+    //     strokeWidth: 4
+    //   },
+    //   type: 'FeatureCollection'
+    // };
+
+    // const nodesFC: FeatureCollectionWithProperties<Point> = {
+    //   ...gpsFC,
+    //   features: mappedGpsPoints,
+    //   properties: {
+    //     color: '#FFF'
+    //   }
+    // };
+
+    log.debug('nodesFC', nodesFC);
+
+    return [nodesFC, graphFeatureCollection];
     // map the gps points on to the roads
     // const { nodes, roadPointsMap } = mapLineString(gpsFC, roadsFC);
 
@@ -93,124 +108,3 @@ export const useScenario = (scenarioId: string) => {
     featureCollections: [roadsFC, nodes, gpsFC, route]
   };
 };
-
-// const createRoute = (
-//   roadPointsMap: RoadPointsMap,
-//   nodes: FeatureCollectionWithProperties<Point>
-// ) => {
-//   const result: FeatureCollectionWithProperties<LineString> = {
-//     features: [],
-//     properties: {
-//       color: '#F0F',
-//       showIndexes: true,
-//       strokeWidth: 4
-//     },
-//     type: 'FeatureCollection'
-//   };
-
-//   if (Object.keys(roadPointsMap).length === 0) {
-//     return result;
-//   }
-
-//   // log.debug('roadPointsMap nodes', nodes);
-//   const startNode = nodes.features.at(0);
-//   const endNode = nodes.features.at(-1);
-
-//   if (!startNode || !endNode) {
-//     return result;
-//   }
-
-//   log.debug('roadPointsMap', roadPointsMap);
-
-//   // Get the ordered nodes that form our route, including road transition points
-//   const graph = buildSearchRouteGraph(roadPointsMap);
-//   const start = createGraphNode(graph, startNode.geometry.coordinates, true);
-//   const end = createGraphNode(graph, endNode.geometry.coordinates, true);
-
-//   const path = graphSearch(graph, start, end);
-
-//   // log.debug('path', path);
-
-//   const pathCoordinates = path.map(node => node.point);
-
-//   // const path = graphSearch(graph, start, end);
-
-//   // const routeNodes = buildRouteGraph(roadPointsMap);
-
-//   // Create a single LineString feature from all the points
-//   const routeFeature: Feature<LineString> = {
-//     geometry: {
-//       coordinates: pathCoordinates,
-//       // coordinates: routeNodes.map(node => node.geometry.coordinates),
-//       type: 'LineString'
-//     },
-//     properties: {},
-//     type: 'Feature'
-//   };
-
-//   result.features.push(routeFeature);
-//   return result;
-// };
-
-/**
- * Maps gps points onto the nearest roads
- *
- * @param gps
- * @param roads
- * @returns
- */
-// const mapLineString = (
-//   gps: FeatureCollection<LineString>,
-//   roads: FeatureCollection<LineString>
-// ) => {
-//   const result: NearestFeatureResult[] = [];
-
-//   const roadPointsMap: RoadPointsMap = {};
-
-//   const mappedGpsPoints: GpsPointFeature[] = [];
-
-//   for (const feature of gps.features) {
-//     for (const coordinate of feature.geometry.coordinates) {
-//       const nearest = findPointOnNearestFeature(coordinate, roads);
-//       if (nearest.length === 0) {
-//         continue;
-//       }
-//       result.push(...nearest);
-//       const [road, point] = nearest[0];
-//       const roadHash = road.properties?.hash;
-//       if (!roadHash) {
-//         continue;
-//       }
-
-//       if (!roadPointsMap[roadHash]) {
-//         roadPointsMap[roadHash] = { points: [], road };
-//       }
-//       point.properties = {
-//         ...point.properties,
-//         roadHash: road.properties?.hash
-//       };
-
-//       roadPointsMap[roadHash].points.push(point);
-
-//       mappedGpsPoints.push(point);
-//     }
-//   }
-
-//   const nodes = result.map(r => r[1]);
-
-//   // create a feature collection of points
-//   const nodesFC: FeatureCollectionWithProperties<Point> = {
-//     features: nodes,
-//     properties: {
-//       color: '#FFF'
-//     },
-//     type: 'FeatureCollection'
-//   };
-
-//   return {
-//     mappedGpsPoints,
-//     nodes: nodesFC,
-//     nodesAndRoads: result,
-//     roadPointsMap
-//   };
-// };

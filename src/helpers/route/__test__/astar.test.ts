@@ -2,8 +2,10 @@ import { bbox as turf_bbox } from '@turf/turf';
 import { describe, expect, test } from 'vitest';
 
 import {
+  gpsSeparateRoads,
   gpsWalkAlongTwoLineStrings,
   gpsWalkThreeRoadJunction,
+  separateRoads,
   threeRoadJunction,
   twoLineStrings
 } from '../../../components/feature-canvas/data';
@@ -459,7 +461,7 @@ describe('scenarios', () => {
     expect(graphResult.path.map(hashToS)).toEqual(['yzts', 'yzsy', 'yzvn']);
 
     const feature = graphToFeature(graphResult);
-    log.debug('feature', feature);
+    // log.debug('feature', feature);
     // log.debug('feature', hashCoords(feature));
 
     expect(hashCoords(feature)).toEqual([
@@ -549,5 +551,41 @@ describe('scenarios', () => {
     // log.debug('feature', hashCoords(feature));
 
     expect(flatCoords(feature)).toEqual([-8, 0, -2, 0, 0, 0, 0, 8]);
+  });
+
+  test('scenario 6', () => {
+    // yzhn.yygz 2 1 0
+    // yzhn.yz40 0 1 2
+    const roads = separateRoads.features as RoadFeature[];
+
+    const { mappedGpsPoints } = mapGpsLineStringToRoad(roads, gpsSeparateRoads);
+    // yz5b
+    // yzhj
+    // yz5w
+
+    const graphResult = buildGraph(roads, mappedGpsPoints, {
+      includeAllGpsPoints: false
+    });
+
+    // log.debug('graphResult', graphResult.path.map(hashToS));
+
+    expect(graphResult.path.map(hashToS)).toEqual([
+      'nb6m',
+      'nbee',
+      '-',
+      'nbeq',
+      'nbgk'
+    ]);
+
+    // const fc = graphToFeature(graphResult);
+    // log.debug('feature', hashCoords(fc));
+    // log.debug('feature', fc);
+    // log.debug('feature', hashCoords(fc?.features[0]));
+    // log.debug('feature', flatCoords(fc?.features[0]));
+    // log.debug('feature', hashCoords(fc?.features[1]));
+    // log.debug('feature', flatCoords(fc?.features[1]));
+
+    // expect(flatCoords(fc?.features[0])).toEqual([2, 0, 8, 0]);
+    // expect(flatCoords(fc?.features[1])).toEqual([12, 20, 18, 20]);
   });
 });
