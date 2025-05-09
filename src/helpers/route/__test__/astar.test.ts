@@ -212,11 +212,7 @@ describe('multi-segment road', () => {
 
     const feature = graphToFeature(graphResult);
 
-    expect(feature?.geometry.coordinates).toEqual([
-      [0, 0],
-      [5, 0],
-      [10, 0]
-    ]);
+    expect(flatCoords(feature)).toEqual([0, 0, 5, 0, 10, 0]);
   });
   test('gps start along road', () => {
     const gpsPoints = [
@@ -463,6 +459,7 @@ describe('scenarios', () => {
     expect(graphResult.path.map(hashToS)).toEqual(['yzts', 'yzsy', 'yzvn']);
 
     const feature = graphToFeature(graphResult);
+    log.debug('feature', feature);
     // log.debug('feature', hashCoords(feature));
 
     expect(hashCoords(feature)).toEqual([

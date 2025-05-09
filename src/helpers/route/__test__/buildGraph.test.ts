@@ -364,7 +364,7 @@ describe('buildGraph', () => {
     ]);
   });
 
-  test.only('separate roads', () => {
+  test('separate roads', () => {
     const roads = [
       createRoadFeature(
         [
@@ -411,5 +411,11 @@ describe('buildGraph', () => {
       '11d2',
       '95f6'
     ]);
+
+    const fc = graphToFeature(graph);
+    // log.debug('feature', fc);
+
+    expect(flatCoords(fc?.features[0])).toEqual([2, 0, 8, 0]);
+    expect(flatCoords(fc?.features[1])).toEqual([12, 20, 18, 20]);
   });
 });

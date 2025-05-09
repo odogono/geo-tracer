@@ -1,4 +1,4 @@
-import { Feature, LineString, Position } from 'geojson';
+import { Feature, FeatureCollection, LineString, Position } from 'geojson';
 
 import { MappedGpsPointFeature } from '@types';
 
@@ -12,30 +12,45 @@ import {
 } from './helpers';
 import { VisitContext } from './types';
 
-const log = createLog('graphToFeature', ['debug']);
+const log = createLog('graphToFeature', ['']);
 
 export const graphToFeature = (
   graph: VisitContext
-): Feature<LineString> | undefined => {
+): FeatureCollection<LineString> | undefined => {
   const { nodeMap, nodeRoadMap, path } = graph;
 
   if (path.length < 2) {
     return undefined;
   }
 
-  const coordinates: Position[] = [];
+  const results: Position[][] = [];
+
+  let coordinates: Position[] = [];
 
   log.debug('path', path.map(hashToS));
 
-  for (let ii = 0; ii < path.length - 1; ii++) {
+  for (
+    let ii = 0, currentIndex = 0;
+    ii < path.length - 1;
+    ii++, currentIndex++
+  ) {
     const head = path[ii];
     const tail = path[ii + 1];
+
+    // log.debug('head??', head);
+    if (tail === '-') {
+      ii++;
+      currentIndex = -1;
+      results.push(coordinates);
+      coordinates = [];
+      continue;
+    }
 
     // const headNode = nodeMap.get(head);
     // const tailNode = nodeMap.get(tail);
 
-    log.debug('head', hashToS(head));
-    log.debug('tail', hashToS(tail));
+    log.debug('head', currentIndex, hashToS(head));
+    log.debug('tail', currentIndex, hashToS(tail));
 
     // const isDebug = hashToS(head) === 'uryp' && hashToS(tail) === 't911';
 
@@ -98,7 +113,7 @@ export const graphToFeature = (
     log.debug('headIndex', headIndex + 1, hashToS(roadNode.properties.hash));
     log.debug('tailIndex', tailIndex + 1, hashToS(tailNode.properties.hash));
 
-    if (ii === 0) {
+    if (currentIndex === 0) {
       // log.debug('headCoords', headNode.geometry.coordinates);
       pushCoords(coordinates, headNode.geometry.coordinates);
     }
@@ -158,13 +173,20 @@ export const graphToFeature = (
     return undefined;
   }
 
-  return {
+  results.push(coordinates);
+
+  const features: Feature<LineString>[] = results.map(coords => ({
     geometry: {
-      coordinates,
+      coordinates: coords,
       type: 'LineString'
     },
     properties: {},
     type: 'Feature'
+  }));
+
+  return {
+    features,
+    type: 'FeatureCollection'
   };
 };
 
