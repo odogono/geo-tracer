@@ -11,37 +11,46 @@ import type {
 } from 'geojson';
 import geohash from 'ngeohash';
 
-const PRECISION = 9;
+// NOTE i have found that precision 9 is not enough for coordinates
+const PRECISION = 10;
 /**
  * Create a hash of an edge feature
  *
  * @param edgeFeature
  * @returns
  */
-export const createEdgeFeatureHash = (edgeFeature: Feature<LineString>) => {
+export const createEdgeFeatureHash = (
+  edgeFeature: Feature<LineString>,
+  precision: number = PRECISION
+) => {
   const lineString = edgeFeature.geometry as LineString;
   const start = lineString.coordinates[0];
   const end = lineString.coordinates.at(-1);
   if (!end) {
     throw new Error('LineString must have at least one coordinate');
   }
-  const startHash = geohash.encode(start[1], start[0], PRECISION);
-  const endHash = geohash.encode(end[1], end[0], PRECISION);
+  const startHash = geohash.encode(start[1], start[0], precision);
+  const endHash = geohash.encode(end[1], end[0], precision);
   return `${startHash}.${endHash}`;
 };
 
-export const createPointFeatureHash = (pointFeature: Feature<Point>) => {
+export const createPointFeatureHash = (
+  pointFeature: Feature<Point>,
+  precision: number = PRECISION
+) => {
   const point = pointFeature.geometry as Point;
   const hash = geohash.encode(
     point.coordinates[1],
     point.coordinates[0],
-    PRECISION
+    precision
   );
   return hash;
 };
 
-export const createPointHash = (point: GeoJSON.Position) =>
-  geohash.encode(point[1], point[0], PRECISION);
+export const createPointHash = (
+  point: GeoJSON.Position,
+  precision: number = PRECISION
+) => geohash.encode(point[1], point[0], precision);
 
 /**
  * Create a hash of a polygon feature

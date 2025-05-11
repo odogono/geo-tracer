@@ -30,12 +30,15 @@ export const FeatureCanvas = ({ scenarioId }: FeatureCanvasProps) => {
   const {
     bbox: scenarioBbox,
     featureCollections: scenarioFeatureCollections,
+    gpsFC,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp
   } = useScenario(scenarioId);
 
   // log.debug('scenarioFeatureCollections', scenarioFeatureCollections);
+  log.debug('gpsFC', gpsFC);
+  const gpsStr = gpsFC ? gpsFC.bbox?.join(',') : '';
 
   const [selectedFeatureCollections, setSelectedFeatureCollections] = useState<
     number[]
@@ -49,6 +52,12 @@ export const FeatureCanvas = ({ scenarioId }: FeatureCanvasProps) => {
       return [...prev, index];
     });
   };
+
+  useEffect(() => {
+    setTextValue(JSON.stringify(gpsFC, null, 2));
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gpsStr]);
 
   // Handle text changes and validate JSON
   const handleTextChange = (text: string) => {

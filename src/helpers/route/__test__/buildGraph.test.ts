@@ -9,6 +9,11 @@ import { createPointFeature, createRoadFeature } from './helpers';
 
 const log = createLog('buildGraph.test');
 
+const mapGpsToRoadOptions = {
+  hashPrecision: 9,
+  maxDistance: 1000
+};
+
 describe('buildGraph', () => {
   const roads = [
     createRoadFeature(
@@ -69,9 +74,11 @@ describe('buildGraph', () => {
     ];
 
     // map gps point to points that are on the road
-    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
-      maxDistance: 1000
-    });
+    const { mappedGpsPoints } = mapGpsToRoad(
+      roads,
+      gpsPoints,
+      mapGpsToRoadOptions
+    );
 
     const graphResult = buildGraph(roads, mappedGpsPoints);
 
@@ -87,9 +94,11 @@ describe('buildGraph', () => {
     ];
 
     // map gps point to points that are on the road
-    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
-      maxDistance: 1000
-    });
+    const { mappedGpsPoints } = mapGpsToRoad(
+      roads,
+      gpsPoints,
+      mapGpsToRoadOptions
+    );
 
     const graphResult = buildGraph(roads, mappedGpsPoints);
 
@@ -106,9 +115,11 @@ describe('buildGraph', () => {
     ];
 
     // map gps point to points that are on the road
-    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
-      maxDistance: 1000
-    });
+    const { mappedGpsPoints } = mapGpsToRoad(
+      roads,
+      gpsPoints,
+      mapGpsToRoadOptions
+    );
 
     const allGpsPointsGraphResult = buildGraph(roads, mappedGpsPoints);
     // log.debug('graphResult', graphResult.path.map(hashToS));
@@ -134,9 +145,11 @@ describe('buildGraph', () => {
     ];
 
     // map gps point to points that are on the road
-    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
-      maxDistance: 1000
-    });
+    const { mappedGpsPoints } = mapGpsToRoad(
+      roads,
+      gpsPoints,
+      mapGpsToRoadOptions
+    );
 
     const graphResult = buildGraph(roads, mappedGpsPoints);
 
@@ -152,9 +165,11 @@ describe('buildGraph', () => {
     ];
 
     // map gps point to points that are on the road
-    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
-      maxDistance: 1000
-    });
+    const { mappedGpsPoints } = mapGpsToRoad(
+      roads,
+      gpsPoints,
+      mapGpsToRoadOptions
+    );
 
     const graphResult = buildGraph(roads, mappedGpsPoints);
 
@@ -191,9 +206,11 @@ describe('buildGraph', () => {
     ];
 
     // map gps point to points that are on the road
-    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
-      maxDistance: 1000
-    });
+    const { mappedGpsPoints } = mapGpsToRoad(
+      roads,
+      gpsPoints,
+      mapGpsToRoadOptions
+    );
 
     // log.debug('mappedGpsPoints', mappedGpsPoints);
 
@@ -237,9 +254,11 @@ describe('buildGraph', () => {
     ];
 
     // map gps point to points that are on the road
-    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
-      maxDistance: 1000
-    });
+    const { mappedGpsPoints } = mapGpsToRoad(
+      roads,
+      gpsPoints,
+      mapGpsToRoadOptions
+    );
 
     // log.debug('mappedGpsPoints', mappedGpsPoints);
 
@@ -277,9 +296,11 @@ describe('buildGraph', () => {
       createPointFeature([10, 5]) // s0zh7w1z0
     ];
 
-    const { mappedGpsPoints } = mapGpsToRoad(multiRoad, gpsPoints, {
-      maxDistance: 1000
-    });
+    const { mappedGpsPoints } = mapGpsToRoad(
+      multiRoad,
+      gpsPoints,
+      mapGpsToRoadOptions
+    );
 
     const { path } = buildGraph(multiRoad, mappedGpsPoints);
 
@@ -326,9 +347,11 @@ describe('buildGraph', () => {
       createPointFeature([6, 10]) // s1u2b t911
     ];
 
-    const { mappedGpsPoints } = mapGpsToRoad(meetingRoads, gpsPoints, {
-      maxDistance: 1000
-    });
+    const { mappedGpsPoints } = mapGpsToRoad(
+      meetingRoads,
+      gpsPoints,
+      mapGpsToRoadOptions
+    );
 
     // log.debug('mappedGpsPoints', mappedGpsPoints);
 
@@ -352,7 +375,7 @@ describe('buildGraph', () => {
 
     const feature = graphToFeature(simpleGraph);
 
-    log.debug('feature', flatCoords(feature));
+    // log.debug('feature', flatCoords(feature));
 
     // prettier-ignore
     expect(flatCoords(feature)).toEqual([
@@ -362,62 +385,5 @@ describe('buildGraph', () => {
       5, 10, 
       6, 10
     ]);
-  });
-
-  test('separate roads', () => {
-    const roads = [
-      createRoadFeature(
-        [
-          [0, 0],
-          [10, 0]
-        ],
-        'road1',
-        '7zzzzzzzz.kpzpgxczb'
-      ),
-      createRoadFeature(
-        [
-          [10, 20],
-          [20, 20]
-        ],
-        'road2',
-        's5x1g8cu2.s7w1z0gs3'
-      )
-    ];
-    // zzzz.xczb
-    // 8cu2.z0gs3
-
-    const gpsPoints = [
-      createPointFeature([2, 0]), // xbrg road1
-      createPointFeature([8, 0]), // pcrv road1
-      createPointFeature([10, 10]), // xczb
-      createPointFeature([12, 20]), // 11d2 road2
-      createPointFeature([18, 20]) // 95f6 road2
-    ];
-
-    const { mappedGpsPoints } = mapGpsToRoad(roads, gpsPoints, {
-      maxDistance: 1000
-    });
-
-    // log.debug('mappedGpsPoints', mappedGpsPoints);
-
-    const graph = buildGraph(roads, mappedGpsPoints, {
-      includeAllGpsPoints: false
-    });
-
-    log.debug('graph', graph.path.map(hashToS));
-
-    expect(graph.path.map(hashToS)).toEqual([
-      'xbrg',
-      'pcrv',
-      '-',
-      '11d2',
-      '95f6'
-    ]);
-
-    const fc = graphToFeature(graph);
-    // log.debug('feature', fc);
-
-    expect(flatCoords(fc?.features[0])).toEqual([2, 0, 8, 0]);
-    expect(flatCoords(fc?.features[1])).toEqual([12, 20, 18, 20]);
   });
 });

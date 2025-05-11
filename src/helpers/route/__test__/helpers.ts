@@ -6,6 +6,8 @@ import { getRoadFeatureBBox } from '../../geo';
 import { createEdgeFeatureHash, createPointHash } from '../../hash';
 import { GraphEdge, GraphNode } from '../astar';
 
+const HASH_PRECISION = 9;
+
 export const createRoadFeature = (
   coordinates: GeoJSON.Position[],
   id: string = 'road1',
@@ -20,7 +22,8 @@ export const createRoadFeature = (
     type: 'Feature'
   };
 
-  feature.properties!.hash = hash ?? createEdgeFeatureHash(feature);
+  feature.properties!.hash =
+    hash ?? createEdgeFeatureHash(feature, HASH_PRECISION);
   feature.bbox = feature.bbox ?? getRoadFeatureBBox(feature);
   feature.properties!.length = featureLength(feature);
 
@@ -34,7 +37,7 @@ export const createPointFeature = (
     coordinates,
     type: 'Point'
   },
-  properties: { hash: createPointHash(coordinates) },
+  properties: { hash: createPointHash(coordinates, HASH_PRECISION) },
   type: 'Feature'
 });
 

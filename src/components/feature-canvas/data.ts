@@ -429,6 +429,23 @@ export const data: FeatureCollection = {
   type: 'FeatureCollection'
 };
 
+export const gpsWalkSouthToNorth: FeatureCollection<LineString> = {
+  features: [
+    {
+      geometry: {
+        coordinates: [
+          [-3.648_553_595_384_937_5, 50.794_546_750_713_955],
+          [-3.648_564_405_397_922_3, 50.794_633_412_962_405]
+        ],
+        type: 'LineString'
+      },
+      properties: {},
+      type: 'Feature'
+    }
+  ],
+  type: 'FeatureCollection'
+};
+
 export const gpsWalkThreeRoadJunction: FeatureCollection<LineString> = {
   features: [
     {
@@ -742,7 +759,8 @@ export const scenarios: Scenario[] = [
     roads: twoLineStrings
   },
   {
-    gps: gpsWalkThreeRoadJunction,
+    // gps: gpsWalkThreeRoadJunction,
+    gps: gpsWalkSouthToNorth,
     id: 'scenario-four',
     roads: threeRoadJunction
   },

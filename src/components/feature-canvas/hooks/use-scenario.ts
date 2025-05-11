@@ -61,17 +61,13 @@ export const useScenario = (scenarioId: string) => {
   // Create a feature collection from the drawn points if any exist
   const drawnPathFC = useMemo(() => {
     if (drawnPoints.length < 2) {
-      log.debug('not enough points for LineString', drawnPoints);
+      // log.debug('not enough points for LineString', drawnPoints);
       return null;
     }
 
     const lineStringFeature = lineString(drawnPoints);
     // log.debug('created LineString', lineStringFeature);
 
-    // const simplifiedLineString = simplify(lineStringFeature, {
-    //   highQuality: true,
-    //   tolerance: 0.000_01
-    // }) as Feature<LineString>;
     return {
       features: [lineStringFeature],
       properties: {
@@ -207,8 +203,8 @@ export const useScenario = (scenarioId: string) => {
 
   return {
     bbox,
-    drawnPathFC,
     featureCollections: [roadsFC, nodes, drawnPathFC || gpsFC, route],
+    gpsFC: drawnPathFC || gpsFC,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp
