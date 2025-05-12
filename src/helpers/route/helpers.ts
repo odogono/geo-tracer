@@ -1,7 +1,14 @@
+import { nearestPointOnLine } from '@turf/turf';
 import { Feature, FeatureCollection, LineString, Position } from 'geojson';
 
 import { createLog } from '@helpers/log';
-import { MappedGpsPointFeature, RoadFeature } from '@types';
+import {
+  GeoHash,
+  MappedGpsPointFeature,
+  RoadFeature,
+  RoadGeoHash,
+  RoadHash
+} from '@types';
 
 import { distanceBetweenPoints } from '../geo';
 import { createPointHash, decodePointHash } from '../hash';
@@ -302,7 +309,10 @@ export const arePositionsEqual = (
   return true;
 };
 
-export const getClosestRoadPointToHash = (roadHash: string, hash: string) => {
+export const getClosestRoadPointToHash = (
+  roadHash: RoadGeoHash,
+  hash: GeoHash
+): GeoHash => {
   // log.debug('getClosestRoadPointToHash', { hash, roadHash });
 
   const [start, end] = getRoadNodeIds(roadHash);
@@ -322,4 +332,66 @@ export const getClosestRoadPointToHash = (roadHash: string, hash: string) => {
     return start;
   }
   return end;
+};
+
+export const getClosestHashOnRoad = (
+  road: RoadFeature,
+  hash: GeoHash
+): GeoHash | undefined => {
+  const point = decodePointHash(hash);
+
+  const nearest = nearestPointOnLine(road.geometry, point);
+
+  if (!nearest) {
+    return undefined;
+  }
+
+  return createPointHash(nearest.geometry.coordinates);
+};
+
+export const createMappedGpsPointFeatureFromHash = (
+  hash: GeoHash,
+  roadHash: RoadHash
+): MappedGpsPointFeature => ({
+  geometry: { coordinates: decodePointHash(hash), type: 'Point' },
+  properties: {
+    dist: 0,
+    hash,
+    index: 0,
+    isRoadPoint: false,
+    location: 0,
+    multiFeatureIndex: 0,
+    roadHash,
+    srcHash: ''
+  },
+  type: 'Feature'
+});
+
+export const countCurrentPath = (context: VisitContext) => {
+  const { path } = context;
+  const index = path.lastIndexOf('-');
+  return index === -1 ? path.length : path.length - (index + 1);
+};
+
+export const countVisitContextPath = (path: GeoHash[]) => {
+  const index = path.lastIndexOf('-');
+  return index === -1 ? path.length : path.length - (index + 1);
+};
+
+/**
+ * Trims the path if it is only a single point
+ * @param context
+ * @returns
+ */
+export const trimVisitContextPath = (context: VisitContext) => {
+  const currentPathlength = countCurrentPath(context);
+
+  if (currentPathlength === 1) {
+    return {
+      ...context,
+      path: context.path.slice(0, -1)
+    };
+  }
+
+  return context;
 };

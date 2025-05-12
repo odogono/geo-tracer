@@ -2,6 +2,18 @@ import { Feature, FeatureCollection, LineString, Point } from 'geojson';
 
 export type DrawMode = 'road' | 'route' | 'select' | 'none';
 
+/**
+ * A geo hash for a point
+ */
+export type GeoHash = string;
+
+/**
+ * A geo hash for a road
+ * consists of two geo hashes, the start and end of the road
+ * joined by a dot
+ */
+export type RoadGeoHash = string;
+
 export type CommonFeatureProperties = {
   [key: string]: unknown;
   hash: string;

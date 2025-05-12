@@ -12,5 +12,6 @@ export type VisitContext = {
   nodeMap: NodeMap;
   nodeRoadMap: NodeRoadMap;
   path: string[];
+  roadGpsCountMap: Map<string, number>;
   roads: RoadFeature[];
 };

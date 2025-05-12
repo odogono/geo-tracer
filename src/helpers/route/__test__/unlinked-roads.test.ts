@@ -13,32 +13,50 @@ const mapGpsToRoadOptions = {
   maxDistance: 1000
 };
 
+const roadLayoutA = [
+  createRoadFeature(
+    [
+      [0, 0],
+      [10, 0]
+    ],
+    'road1',
+    '7zzzzzzzz.kpzpgxczb'
+  ),
+  createRoadFeature(
+    [
+      [10, 20],
+      [20, 20]
+    ],
+    'road2',
+    's5x1g8cu2.s7w1z0gs3'
+  )
+];
+
+const roadLayoutB = [
+  // road east
+  createRoadFeature(
+    [
+      [0, 0],
+      [10, 0]
+    ],
+    'road1',
+    '7zzzzzzzz.kpzpgxczb'
+  ),
+  // road south
+  createRoadFeature(
+    [
+      [5, 10],
+      [5, 20]
+    ],
+    'road2'
+    // 'u2yh.bbuk'
+  )
+];
+
 describe('unlinked roads', () => {
   test('unlinked roads', () => {
-    const roads = [
-      createRoadFeature(
-        [
-          [0, 0],
-          [10, 0]
-        ],
-        'road1',
-        '7zzzzzzzz.kpzpgxczb'
-      ),
-      createRoadFeature(
-        [
-          [10, 20],
-          [20, 20]
-        ],
-        'road2',
-        's5x1g8cu2.s7w1z0gs3'
-      )
-    ];
     // zzzz.xczb
     // 8cu2.z0gs3
-
-    for (const road of roads) {
-      log.debug('road', road.properties.hash);
-    }
 
     const gpsPoints = [
       createPointFeature([2, 0]), // xbrg road1
@@ -49,14 +67,14 @@ describe('unlinked roads', () => {
     ];
 
     const { mappedGpsPoints } = mapGpsToRoad(
-      roads,
+      roadLayoutA,
       gpsPoints,
       mapGpsToRoadOptions
     );
 
     // log.debug('mappedGpsPoints', mappedGpsPoints);
 
-    const graph = buildGraph(roads, mappedGpsPoints, {
+    const graph = buildGraph(roadLayoutA, mappedGpsPoints, {
       includeAllGpsPoints: false
     });
 
@@ -66,7 +84,7 @@ describe('unlinked roads', () => {
       'xbrg',
       'pcrv',
       '-',
-      '8cu2',
+      '11d2',
       '95f6'
     ]);
 
@@ -77,26 +95,7 @@ describe('unlinked roads', () => {
     // expect(flatCoords(fc?.features[1])).toEqual([12, 20, 18, 20]);
   });
 
-  test('unlinked roads - single point', () => {
-    const roads = [
-      createRoadFeature(
-        [
-          [0, 0],
-          [10, 0]
-        ],
-        'road1',
-        '7zzzzzzzz.kpzpgxczb'
-      ),
-      createRoadFeature(
-        [
-          [5, 10],
-          [5, 20]
-        ],
-        'road2'
-        // 'u2yh.bbuk'
-      )
-    ];
-
+  test('unlinked roads - single point on 2nd road', () => {
     // zzzz.xczb
     // w1z0.n5x1
 
@@ -104,30 +103,66 @@ describe('unlinked roads', () => {
       createPointFeature([2, 0]), // xbrg
       createPointFeature([5, 0]), // zbzu
       // createPointFeature([5, 10]), // u2yh
-      createPointFeature([5, 12]) // b8ch
-      // createPointFeature([5, 15]) // f8vk
+      createPointFeature([5, 12]), // b8ch
+      createPointFeature([5, 15]) // f8vk
     ];
 
     const { mappedGpsPoints } = mapGpsToRoad(
-      roads,
+      roadLayoutB,
       gpsPoints,
       mapGpsToRoadOptions
     );
 
     // log.debug('mappedGpsPoints', mappedGpsPoints);
 
-    const graph = buildGraph(roads, mappedGpsPoints, {
+    const graph = buildGraph(roadLayoutB, mappedGpsPoints, {
       includeAllGpsPoints: false
     });
 
-    // log.debug('graph', graph.path.map(hashToS));
+    log.debug('graph', graph.path.map(hashToS));
 
     expect(graph.path.map(hashToS)).toEqual([
       'xbrg',
       'zbzu',
       '-',
-      'u2yh',
-      'b8ch'
+      // 'u2yh',
+      'b8ch',
+      'f8vk'
+    ]);
+
+    // const fc = graphToFeature(graph);
+    // log.debug('feature', fc);
+  });
+  test('unlinked roads - single point on 1st road', () => {
+    // zzzz.xczb
+    // u2yh.bbuk
+    const gpsPoints = [
+      createPointFeature([4, 0]), // kpfzg pbxy
+      createPointFeature([5, 12]), // s45s3 b8ch
+      createPointFeature([5, 15]) // s4et3 f8vk
+    ];
+
+    const { mappedGpsPoints } = mapGpsToRoad(
+      roadLayoutB,
+      gpsPoints,
+      mapGpsToRoadOptions
+    );
+
+    // log.debug('mappedGpsPoints', mappedGpsPoints);
+
+    const graph = buildGraph(roadLayoutB, mappedGpsPoints, {
+      includeAllGpsPoints: false
+    });
+
+    log.debug('graph', graph.path.map(hashToS));
+
+    expect(graph.path.map(hashToS)).toEqual([
+      // 'pbxy',
+      // 'bzux',
+      // '-',
+      // 'u2yh',
+      'b8ch',
+      'f8vk'
     ]);
 
     // const fc = graphToFeature(graph);

@@ -230,6 +230,9 @@ const calculateRoute = (
   const graphResult = buildGraph(roads, mappedGpsPoints, {
     includeAllGpsPoints: false
   });
+
+  log.debug('📈 graphResult', graphResult.path);
+
   const graphFeatureCollection = graphToFeature(
     graphResult
   ) as FeatureCollectionWithProperties<LineString>;
