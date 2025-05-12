@@ -4,6 +4,7 @@ import { createLog } from '../log';
 import {
   createRoadPointFeature,
   doesRoadHashContainNode,
+  getClosestRoadPointToHash,
   getLinkedNode,
   getNodeGpsPoint,
   getNodeRoad,
@@ -15,7 +16,7 @@ import {
 } from './helpers';
 import { NodeMap, VisitContext } from './types';
 
-const log = createLog('buildGraph', ['debug', 'error']);
+const log = createLog('buildGraph');
 
 export type BuildGraphOptions = {
   includeAllGpsPoints: boolean;
@@ -246,21 +247,38 @@ const visitNode = (context: VisitContext) => {
     );
 
     if (!joinNode) {
-      // no join node, means we are on unlinked roads, so start a new path
-      log.error(currentGpsIndex, 'no join node - new path');
-      log.error(currentGpsIndex, 'nextRoadHash', hashToS(nextRoadHash));
+      return handleUnlinkedRoads(context, currentHash, nextHash, nextRoadHash);
+      // // no join node, means we are on unlinked roads, so start a new path
+      // log.error(currentGpsIndex, 'no join node - new path');
+      // log.error(currentGpsIndex, 'nextRoadHash', hashToS(nextRoadHash));
 
-      // do we need to add the current point to the path?
-      const path = includeAllGpsPoints
-        ? [...context.path, PATH_BREAK]
-        : [...context.path, currentHash, PATH_BREAK];
-      // if (context.path.at(-1))
+      // // do we need to add the current point to the path?
+      // const path = includeAllGpsPoints
+      //   ? [...context.path, PATH_BREAK]
+      //   : [...context.path, currentHash, PATH_BREAK];
 
-      return visitNode({
-        ...context,
-        currentHash: nextHash,
-        path
-      });
+      // // is the next hash we are adding a road point?
+      // const isNextHashRoadPoint = isNodeRoadPoint(nodeMap, nextHash);
+
+      // if (!isNextHashRoadPoint) {
+      //   // because we are jumping to a new road, add the closest road point
+      //   // to the existing road
+      //   const closestRoadHash = getClosestRoadPointToHash(
+      //     nextRoadHash,
+      //     currentHash
+      //   );
+
+      //   log.debug(currentGpsIndex, 'next hash', {
+      //     closestRoadHash,
+      //     isNextHashRoadPoint
+      //   });
+      // }
+
+      // return visitNode({
+      //   ...context,
+      //   currentHash: nextHash,
+      //   path
+      // });
     }
 
     if (joinNode === nextHash) {
@@ -281,6 +299,49 @@ const visitNode = (context: VisitContext) => {
       path: [...context.path, joinNode]
     });
   }
+};
+
+const handleUnlinkedRoads = (
+  context: VisitContext,
+  currentHash: string,
+  nextHash: string,
+  nextRoadHash: string
+): VisitContext => {
+  const { currentGpsIndex, includeAllGpsPoints, nodeMap } = context;
+
+  // no join node, means we are on unlinked roads, so start a new path
+  log.error(currentGpsIndex, 'no join node - new path');
+  log.error(currentGpsIndex, 'nextRoadHash', hashToS(nextRoadHash));
+
+  // do we need to add the current point to the path?
+  let path = includeAllGpsPoints
+    ? [...context.path, PATH_BREAK]
+    : [...context.path, currentHash, PATH_BREAK];
+
+  // is the next hash we are adding a road point?
+  const isNextHashRoadPoint = isNodeRoadPoint(nodeMap, nextHash);
+
+  if (!isNextHashRoadPoint) {
+    // because we are jumping to a new road, add the closest road point
+    // to the existing road
+    const closestRoadHash = getClosestRoadPointToHash(
+      nextRoadHash,
+      currentHash
+    );
+
+    log.debug(currentGpsIndex, 'next hash', {
+      closestRoadHash,
+      isNextHashRoadPoint
+    });
+
+    path = [...path, closestRoadHash];
+  }
+
+  return visitNode({
+    ...context,
+    currentHash: nextHash,
+    path
+  });
 };
 
 /**

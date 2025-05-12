@@ -12,12 +12,12 @@ import {
 } from './helpers';
 import { VisitContext } from './types';
 
-const log = createLog('graphToFeature', ['debug', 'error']);
+const log = createLog('graphToFeature'); //, ['debug', 'error']);
 
 export const graphToFeature = (
   graph: VisitContext
 ): FeatureCollection<LineString> | undefined => {
-  const { nodeMap, nodeRoadMap, path } = graph;
+  const { nodeMap, path } = graph;
 
   if (path.length < 2) {
     return undefined;

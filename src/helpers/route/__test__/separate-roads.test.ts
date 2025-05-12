@@ -74,7 +74,7 @@ describe('separate roads', () => {
     expect(flatCoords(fc?.features[1])).toEqual([12, 20, 18, 20]);
   });
 
-  test('separate roads - single point', () => {
+  test.only('separate roads - single point', () => {
     const roads = [
       createRoadFeature(
         [
@@ -89,19 +89,20 @@ describe('separate roads', () => {
           [5, 10],
           [5, 20]
         ],
-        'road2',
-        's0zh7w1z0.s2yhrn5x1'
+        'road2'
+        // 'u2yh.bbuk'
       )
     ];
+
     // zzzz.xczb
-    // 8cu2.z0gs3
+    // w1z0.n5x1
 
     const gpsPoints = [
       createPointFeature([2, 0]), // xbrg
       createPointFeature([5, 0]), // zbzu
       // createPointFeature([5, 10]), // u2yh
-      createPointFeature([5, 12]), // b8ch
-      createPointFeature([5, 15]) // f8vk
+      createPointFeature([5, 12]) // b8ch
+      // createPointFeature([5, 15]) // f8vk
     ];
 
     const { mappedGpsPoints } = mapGpsToRoad(
@@ -116,6 +117,17 @@ describe('separate roads', () => {
       includeAllGpsPoints: false
     });
 
-    log.debug('graph', graph.path.map(hashToS));
+    // log.debug('graph', graph.path.map(hashToS));
+
+    expect(graph.path.map(hashToS)).toEqual([
+      'xbrg',
+      'zbzu',
+      '-',
+      'u2yh',
+      'b8ch'
+    ]);
+
+    // const fc = graphToFeature(graph);
+    // log.debug('feature', fc);
   });
 });

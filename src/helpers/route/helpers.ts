@@ -1,9 +1,13 @@
 import { Feature, FeatureCollection, LineString, Position } from 'geojson';
 
+import { createLog } from '@helpers/log';
 import { MappedGpsPointFeature, RoadFeature } from '@types';
 
-import { createPointHash } from '../hash';
+import { distanceBetweenPoints } from '../geo';
+import { createPointHash, decodePointHash } from '../hash';
 import { NodeMap, VisitContext } from './types';
+
+const log = createLog('route/helpers');
 
 export const flatCoords = (
   feature: FeatureCollection<LineString> | Feature<LineString> | undefined
@@ -296,4 +300,26 @@ export const arePositionsEqual = (
     }
   }
   return true;
+};
+
+export const getClosestRoadPointToHash = (roadHash: string, hash: string) => {
+  // log.debug('getClosestRoadPointToHash', { hash, roadHash });
+
+  const [start, end] = getRoadNodeIds(roadHash);
+
+  const startPoint = decodePointHash(start);
+  const endPoint = decodePointHash(end);
+
+  const hashPoint = decodePointHash(hash);
+
+  const distanceToStart = distanceBetweenPoints(startPoint, hashPoint);
+  const distanceToEnd = distanceBetweenPoints(endPoint, hashPoint);
+
+  // log.debug('distanceTo start', hashToS(start), distanceToStart);
+  // log.debug('distanceTo end', hashToS(end), distanceToEnd);
+
+  if (distanceToStart < distanceToEnd) {
+    return start;
+  }
+  return end;
 };

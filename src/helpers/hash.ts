@@ -52,6 +52,11 @@ export const createPointHash = (
   precision: number = PRECISION
 ) => geohash.encode(point[1], point[0], precision);
 
+export const decodePointHash = (hash: string): GeoJSON.Position => {
+  const { latitude, longitude } = geohash.decode(hash);
+  return [longitude, latitude];
+};
+
 /**
  * Create a hash of a polygon feature
  *
