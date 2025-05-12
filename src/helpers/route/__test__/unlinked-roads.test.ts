@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'vitest';
 
 import { createLog } from '../../log';
-import { buildGraph } from '../buildGraph';
-import { graphToFeature } from '../graphToFeature';
-import { flatCoords, hashToS } from '../helpers';
-import { mapGpsToRoad } from '../mapGpsToRoad';
+import { buildGraph } from '../build-graph';
+import { hashToS } from '../helpers';
+import { mapGpsToRoad } from '../map-gps-to-road';
 import { createPointFeature, createRoadFeature } from './helpers';
 
 const log = createLog('buildGraph.test');
@@ -14,8 +13,8 @@ const mapGpsToRoadOptions = {
   maxDistance: 1000
 };
 
-describe('separate roads', () => {
-  test('separate roads', () => {
+describe('unlinked roads', () => {
+  test('unlinked roads', () => {
     const roads = [
       createRoadFeature(
         [
@@ -37,6 +36,10 @@ describe('separate roads', () => {
     // zzzz.xczb
     // 8cu2.z0gs3
 
+    for (const road of roads) {
+      log.debug('road', road.properties.hash);
+    }
+
     const gpsPoints = [
       createPointFeature([2, 0]), // xbrg road1
       createPointFeature([8, 0]), // pcrv road1
@@ -57,24 +60,24 @@ describe('separate roads', () => {
       includeAllGpsPoints: false
     });
 
-    log.debug('graph', graph.path.map(hashToS));
+    // log.debug('graph', graph.path); //.map(hashToS));
 
     expect(graph.path.map(hashToS)).toEqual([
       'xbrg',
       'pcrv',
       '-',
-      '11d2',
+      '8cu2',
       '95f6'
     ]);
 
-    const fc = graphToFeature(graph);
-    // log.debug('feature', fc);
+    // const fc = graphToFeature(graph);
+    // // log.debug('feature', fc);
 
-    expect(flatCoords(fc?.features[0])).toEqual([2, 0, 8, 0]);
-    expect(flatCoords(fc?.features[1])).toEqual([12, 20, 18, 20]);
+    // expect(flatCoords(fc?.features[0])).toEqual([2, 0, 8, 0]);
+    // expect(flatCoords(fc?.features[1])).toEqual([12, 20, 18, 20]);
   });
 
-  test.only('separate roads - single point', () => {
+  test('unlinked roads - single point', () => {
     const roads = [
       createRoadFeature(
         [

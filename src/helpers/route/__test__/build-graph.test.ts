@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'vitest';
 
 import { createLog } from '../../log';
-import { buildGraph } from '../buildGraph';
-import { graphToFeature } from '../graphToFeature';
+import { buildGraph } from '../build-graph';
+import { graphToFeature } from '../graph-to-feature';
 import { flatCoords, hashToS } from '../helpers';
-import { mapGpsToRoad } from '../mapGpsToRoad';
+import { mapGpsToRoad } from '../map-gps-to-road';
 import { createPointFeature, createRoadFeature } from './helpers';
 
 const log = createLog('buildGraph.test');

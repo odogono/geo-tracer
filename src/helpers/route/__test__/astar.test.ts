@@ -12,10 +12,10 @@ import {
 import { RoadFeature } from '../../../types';
 import { getRoadFeatureBBox } from '../../geo';
 import { createLog } from '../../log';
-import { buildGraph } from '../buildGraph';
-import { graphToFeature } from '../graphToFeature';
+import { buildGraph } from '../build-graph';
+import { graphToFeature } from '../graph-to-feature';
 import { flatCoords, hashCoords, hashToS } from '../helpers';
-import { mapGpsLineStringToRoad, mapGpsToRoad } from '../mapGpsToRoad';
+import { mapGpsLineStringToRoad, mapGpsToRoad } from '../map-gps-to-road';
 import { createPointFeature, createRoadFeature } from './helpers';
 
 const log = createLog('astar.test');

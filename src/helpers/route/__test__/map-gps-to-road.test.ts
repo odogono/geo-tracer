@@ -2,8 +2,8 @@ import { describe, expect, test } from 'vitest';
 
 import { GpsPointFeature, MappedGpsPointFeature, RoadFeature } from '@types';
 
-import { createLog } from '../../../helpers/log';
-import { findPointOnNearestRoad, mapGpsToRoad } from '../mapGpsToRoad';
+import { createLog } from '../../log';
+import { findPointOnNearestRoad, mapGpsToRoad } from '../map-gps-to-road';
 import { createPointFeature, createRoadFeature } from './helpers';
 
 const log = createLog('mapGpsToRoad.test');

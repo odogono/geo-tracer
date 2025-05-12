@@ -8,12 +8,12 @@ import {
 import { lineString, simplify, bbox as turfBbox } from '@turf/turf';
 import { Feature, LineString, Point } from 'geojson';
 
+import { mapGpsLineStringToRoad } from '@/helpers/route/map-gps-to-road';
 import { createLog } from '@helpers/log';
-import { mapGpsLineStringToRoad } from '@helpers/route/mapGpsToRoad';
 import { RoadFeature } from '@types';
 
-import { buildGraph } from '../../../helpers/route/buildGraph';
-import { graphToFeature } from '../../../helpers/route/graphToFeature';
+import { buildGraph } from '../../../helpers/route/build-graph';
+import { graphToFeature } from '../../../helpers/route/graph-to-feature';
 import { scenarios } from '../data';
 import { CANVAS_MARGIN, bboxSum, latitudeToY, longitudeToX } from '../helpers';
 import { FeatureCollectionWithProperties } from '../types';
