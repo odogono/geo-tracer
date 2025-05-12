@@ -49,7 +49,7 @@ export const hashCoords = (
     .map(h => (shorten ? h.slice(-4) : h));
 };
 
-export const hashToS = (hash: string | undefined) => {
+export const hashToS = (hash: GeoHash | RoadGeoHash | undefined) => {
   if (!hash) {
     return 'undefined';
   }
@@ -61,9 +61,12 @@ export const hashToS = (hash: string | undefined) => {
     : hash.slice(-4);
 };
 
-export const getRoadNodeIds = (roadHash: string) => roadHash.split('.');
+export const getRoadNodeIds = (roadHash: RoadGeoHash) => roadHash.split('.');
 
-export const doesRoadHashContainNode = (roadHash: string, nodeHash: string) => {
+export const doesRoadHashContainNode = (
+  roadHash: RoadGeoHash,
+  nodeHash: GeoHash
+) => {
   const [start, end] = getRoadNodeIds(roadHash);
   return start === nodeHash || end === nodeHash;
 };

@@ -759,8 +759,8 @@ export const scenarios: Scenario[] = [
     roads: twoLineStrings
   },
   {
-    // gps: gpsWalkThreeRoadJunction,
-    gps: gpsWalkSouthToNorth,
+    gps: gpsWalkThreeRoadJunction,
+    // gps: gpsWalkSouthToNorth,
     id: 'scenario-four',
     roads: threeRoadJunction
   },
