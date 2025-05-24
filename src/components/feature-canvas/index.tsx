@@ -29,6 +29,7 @@ export const FeatureCanvas = ({ scenarioId }: FeatureCanvasProps) => {
 
   const {
     bbox: scenarioBbox,
+    error: scenarioError,
     featureCollections: scenarioFeatureCollections,
     gpsFC,
     handlePointerDown,
@@ -37,7 +38,7 @@ export const FeatureCanvas = ({ scenarioId }: FeatureCanvasProps) => {
   } = useScenario(scenarioId);
 
   // log.debug('scenarioFeatureCollections', scenarioFeatureCollections);
-  log.debug('gpsFC', gpsFC);
+  // log.debug('gpsFC', gpsFC);
   const gpsStr = gpsFC ? gpsFC.bbox?.join(',') : '';
 
   const [selectedFeatureCollections, setSelectedFeatureCollections] = useState<
@@ -105,12 +106,6 @@ export const FeatureCanvas = ({ scenarioId }: FeatureCanvasProps) => {
         featureCollection
       });
     }
-
-    // renderFeatureCollection({
-    //   bbox: scenarioBbox,
-    //   canvas,
-    //   featureCollection: featureData as unknown as FeatureCollection
-    // });
   }, [scenarioFeatureCollections, scenarioBbox, selectedFeatureCollections]);
 
   // Call renderCanvas whenever dimensions, featureData changes or view toggles
@@ -119,6 +114,8 @@ export const FeatureCanvas = ({ scenarioId }: FeatureCanvasProps) => {
       renderCanvas();
     }
   }, [isTextView, dimensions, renderCanvas]);
+
+  const errorMessage = scenarioError ? scenarioError : error;
 
   return (
     <div
@@ -141,6 +138,10 @@ export const FeatureCanvas = ({ scenarioId }: FeatureCanvasProps) => {
         onChange={handleFeatureCollectionChange}
         selected={selectedFeatureCollections}
       />
+
+      <div className="absolute flex justify-center items-center w-full h-100 text-red-500 pointer-events-none">
+        {errorMessage}
+      </div>
 
       {isTextView ? (
         <div className="w-full h-full p-4">

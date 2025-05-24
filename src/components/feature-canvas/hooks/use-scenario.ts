@@ -83,7 +83,7 @@ export const useScenario = (scenarioId: string) => {
   const bbox = bboxSum([roadsFC.bbox, gpsFC.bbox]);
   // const bboxString = bbox.join(',');
 
-  const [nodes, route] = useMemo(
+  const { error, mappedGpsPoints, route } = useMemo(
     () => calculateRoute(roadsFC, gpsFC),
     [gpsFC, roadsFC]
   );
@@ -203,7 +203,8 @@ export const useScenario = (scenarioId: string) => {
 
   return {
     bbox,
-    featureCollections: [roadsFC, nodes, drawnPathFC || gpsFC, route],
+    error,
+    featureCollections: [roadsFC, mappedGpsPoints, drawnPathFC || gpsFC, route],
     gpsFC: drawnPathFC || gpsFC,
     handlePointerDown,
     handlePointerMove,
@@ -219,6 +220,16 @@ const calculateRoute = (
 
   const { mappedGpsPoints } = mapGpsLineStringToRoad(roads, gpsLineString);
 
+  // log.debug('📈 mappedGpsPoints', mappedGpsPoints);
+
+  if (!mappedGpsPoints.length) {
+    return {
+      error: 'Failed to map GPS points',
+      mappedGpsPoints: null,
+      route: null
+    };
+  }
+
   const nodesFC: FeatureCollectionWithProperties<Point> = {
     ...gpsLineString,
     features: mappedGpsPoints,
@@ -231,14 +242,18 @@ const calculateRoute = (
     includeAllGpsPoints: false
   });
 
-  log.debug('📈 graphResult', graphResult.path);
+  // log.debug('📈 graphResult', graphResult.path);
 
   const graphFeatureCollection = graphToFeature(
     graphResult
   ) as FeatureCollectionWithProperties<LineString>;
 
   if (!graphFeatureCollection) {
-    return [nodesFC];
+    return {
+      error: 'No route found',
+      mappedGpsPoints: nodesFC,
+      route: null
+    };
   }
 
   graphFeatureCollection.properties = {
@@ -249,5 +264,11 @@ const calculateRoute = (
 
   // log.debug('nodesFC', nodesFC);
 
-  return [nodesFC, graphFeatureCollection];
+  return {
+    error: null,
+    mappedGpsPoints: nodesFC,
+    route: graphFeatureCollection
+  };
+
+  // return [nodesFC, graphFeatureCollection];
 };

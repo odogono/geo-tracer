@@ -123,6 +123,8 @@ export const buildGraph = (
     nodeRoadMap.set(hash, roadHashes);
   }
 
+  log.debug('[buildGraph] gpsPoints', gpsPoints);
+
   const start = gpsPoints[0];
   const { hash } = start.properties;
 
